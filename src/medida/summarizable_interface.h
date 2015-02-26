@@ -7,6 +7,18 @@
 
 namespace medida {
 
+#ifdef _MSC_VER
+#ifdef min
+#define msvc_min min
+#undef min
+#endif
+
+#ifdef max
+#define msvc_max max
+#undef max
+#endif
+#endif
+
 class SummarizableInterface {
 public:
   virtual ~SummarizableInterface() {};
@@ -16,6 +28,12 @@ public:
   virtual double std_dev() const = 0;
   virtual double sum() const = 0;
 };
+
+#ifdef _MSC_VER
+#undef msvc_min
+#undef msvc_max
+#endif
+
 
 } // namespace medida
 
