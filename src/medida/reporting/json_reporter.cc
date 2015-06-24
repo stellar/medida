@@ -8,7 +8,7 @@
 #include <ctime>
 #include <mutex>
 #include <sstream>
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <Winsock2.h>
 #else
 #include <sys/utsname.h>
@@ -77,7 +77,7 @@ void JsonReporter::Process(Timer& timer) {
 JsonReporter::Impl::Impl(JsonReporter& self, MetricsRegistry &registry)
     : self_     (self),
       registry_ (registry) {
-#ifdef _MSC_VER
+#ifdef _WIN32
 	char nameBuf[128];
 	if (gethostname(nameBuf, sizeof(nameBuf)) == 0)
 	{
@@ -161,7 +161,7 @@ void JsonReporter::Impl::Process(Meter& meter) {
 
 void JsonReporter::Impl::Process(Histogram& histogram) {
   auto snapshot = histogram.GetSnapshot();
-#ifdef _MSC_VER
+#ifdef _WIN32
 #undef min
 #undef max
 #endif
