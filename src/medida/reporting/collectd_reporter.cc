@@ -222,6 +222,10 @@ void CollectdReporter::Impl::Process(Histogram& histogram) {
     {kGauge, snapshot.get98thPercentile()},
     {kGauge, snapshot.get99thPercentile()},
     {kGauge, snapshot.get999thPercentile()},
+    // Put 'sum' on the end as it seems clients are assumed to
+    // be accessing these metrics by position and we do not
+    // want to break them.
+    {kGauge, histogram.sum()},
   });
 }
 
@@ -241,6 +245,10 @@ void CollectdReporter::Impl::Process(Timer& timer) {
     {kGauge, snapshot.get98thPercentile()},
     {kGauge, snapshot.get99thPercentile()},
     {kGauge, snapshot.get999thPercentile()},
+    // Put 'sum' on the end as it seems clients are assumed to
+    // be accessing these metrics by position and we do not
+    // want to break them.
+    {kGauge, timer.sum()},
   });
 }
 

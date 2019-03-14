@@ -170,6 +170,7 @@ void JsonReporter::Impl::Process(Histogram& histogram) {
        << "\"max\":" << histogram.max() << "," << std::endl
        << "\"mean\":" << histogram.mean() << "," << std::endl
        << "\"stddev\":" << histogram.std_dev() << "," << std::endl
+       << "\"sum\":" << histogram.sum() << "," << std::endl
        << "\"median\":" << snapshot.getMedian() << "," << std::endl
        << "\"75%\":" << snapshot.get75thPercentile() << "," << std::endl
        << "\"95%\":" << snapshot.get95thPercentile() << "," << std::endl
@@ -196,6 +197,7 @@ void JsonReporter::Impl::Process(Timer& timer) {
        << "\"max\":" << timer.max() << "," << std::endl
        << "\"mean\":" << timer.mean() << "," << std::endl
        << "\"stddev\":" << timer.std_dev() << "," << std::endl
+       << "\"sum\":" << timer.sum() << "," << std::endl
        << "\"median\":" << snapshot.getMedian() << "," << std::endl
        << "\"75%\":" << snapshot.get75thPercentile() << "," << std::endl
        << "\"95%\":" << snapshot.get95thPercentile() << "," << std::endl
