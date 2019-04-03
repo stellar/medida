@@ -17,6 +17,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
+#ifdef __FreeBSD__
+#include <netinet/in.h>
+#endif
 
 #include "medida/metrics_registry.h"
 #include "medida/reporting/util.h"
