@@ -24,6 +24,7 @@ class EWMA {
   void update(std::int64_t n);
   void tick();
   double getRate(std::chrono::nanoseconds duration = std::chrono::seconds {1}) const;
+  void clear();
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;
