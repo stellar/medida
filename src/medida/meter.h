@@ -29,6 +29,7 @@ class Meter : public MetricInterface, MeteredInterface {
   virtual double one_minute_rate();
   virtual double mean_rate();
   void Mark(std::uint64_t n = 1);
+  void Clear();
   void Process(MetricProcessor& processor);
  private:
   class Impl;

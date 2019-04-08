@@ -23,12 +23,13 @@ class Meter::Impl {
   double one_minute_rate();
   double mean_rate();
   void Mark(std::uint64_t n = 1);
+  void Clear();
   void Process(MetricProcessor& processor);
  private:
   const std::string event_type_;
   const std::chrono::nanoseconds rate_unit_;
   std::atomic<std::uint64_t> count_;
-  const Clock::time_point start_time_;
+  Clock::time_point start_time_;
   std::atomic<std::int64_t> last_tick_;
   stats::EWMA m1_rate_;
   stats::EWMA m5_rate_;
@@ -86,6 +87,10 @@ void Meter::Mark(std::uint64_t n) {
   impl_->Mark(n);
 }
 
+void Meter::Clear()
+{
+  impl_->Clear();
+}
 
 void Meter::Process(MetricProcessor& processor) {
   processor.Process(*this);  // FIXME: pimpl?
@@ -162,6 +167,15 @@ void Meter::Impl::Mark(std::uint64_t n) {
   m15_rate_.update(n);
 }
 
+void Meter::Impl::Clear()
+{
+  count_ = 0;
+  start_time_ = Clock::now();
+  last_tick_ = std::chrono::duration_cast<std::chrono::nanoseconds>(start_time_.time_since_epoch()).count();
+  m1_rate_.clear();
+  m5_rate_.clear();
+  m15_rate_.clear();
+}
 
 void Meter::Impl::Tick() {
   m1_rate_.tick();

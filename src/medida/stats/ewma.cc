@@ -27,6 +27,7 @@ class EWMA::Impl {
   void update(std::int64_t n);
   void tick();
   double getRate(std::chrono::nanoseconds duration = std::chrono::seconds {1}) const;
+  void clear();
  private:
   volatile bool initialized_;
   volatile double rate_;
@@ -79,6 +80,10 @@ double EWMA::getRate(std::chrono::nanoseconds duration) const {
   return impl_->getRate(duration);
 }
 
+void EWMA::clear()
+{
+  impl_->clear();
+}
 
 // === Implementation ===
 
@@ -126,6 +131,12 @@ double EWMA::Impl::getRate(std::chrono::nanoseconds duration) const {
   return rate_ * duration.count();
 }
 
+void EWMA::Impl::clear()
+{
+  initialized_ = false;
+  rate_ = 0.0;
+  uncounted_ = 0;
+}
 
 } // namespace stats
 } // namespace medida
