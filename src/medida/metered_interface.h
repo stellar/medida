@@ -5,6 +5,8 @@
 #ifndef MEDIDA_METERED_INTERFACE_H_
 #define MEDIDA_METERED_INTERFACE_H_
 
+#include <string>
+
 #include "medida/types.h"
 
 namespace medida {
