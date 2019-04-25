@@ -2,6 +2,8 @@
 // Copyright (c) 2012 Daniel Lundin
 //
 
+#include <stdexcept>
+
 #include "medida/timer_context.h"
 
 #include "medida/timer.h"
