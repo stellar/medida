@@ -108,7 +108,8 @@ void ConsoleReporter::Impl::Process(Meter& meter) {
 
 void ConsoleReporter::Impl::Process(Histogram& histogram) {
   auto snapshot = histogram.GetSnapshot();
-  out_ << "             min = " << histogram.min() << std::endl
+  out_ << "           count = " << histogram.count() << std::endl
+       << "             min = " << histogram.min() << std::endl
        << "             max = " << histogram.max() << std::endl
        << "            mean = " << histogram.mean() << std::endl
        << "          stddev = " << histogram.std_dev() << std::endl
