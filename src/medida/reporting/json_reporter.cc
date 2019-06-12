@@ -166,6 +166,7 @@ void JsonReporter::Impl::Process(Histogram& histogram) {
 #undef max
 #endif
   out_ << "\"type\":\"histogram\"," << std::endl
+       << "\"count\":" << histogram.count() << "," << std::endl
        << "\"min\":" << histogram.min() << "," << std::endl
        << "\"max\":" << histogram.max() << "," << std::endl
        << "\"mean\":" << histogram.mean() << "," << std::endl
