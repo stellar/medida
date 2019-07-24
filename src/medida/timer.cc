@@ -33,6 +33,7 @@ class Timer::Impl {
   std::chrono::nanoseconds duration_unit() const;
   void Clear();
   void Update(std::chrono::nanoseconds duration);
+  void Update(std::vector<std::chrono::nanoseconds> durations);
   TimerContext TimeScope();
   void Time(std::function<void()>);
  private:
@@ -134,6 +135,9 @@ void Timer::Update(std::chrono::nanoseconds duration) {
   impl_->Update(duration);
 }
 
+void Timer::Update(std::vector<std::chrono::nanoseconds> durations) {
+  impl_->Update(durations);
+}
 
 stats::Snapshot Timer::GetSnapshot() const {
   return impl_->GetSnapshot();
@@ -248,6 +252,21 @@ void Timer::Impl::Update(std::chrono::nanoseconds duration) {
     histogram_.Update(count);
     meter_.Mark();
   }
+}
+
+
+void Timer::Impl::Update(std::vector<std::chrono::nanoseconds> durations) {
+  std::vector<std::int64_t> counts(durations.size());
+  for (auto const& ns : durations)
+  {
+    auto count = ns.count();
+    if (count != 0)
+    {
+      counts.emplace_back(count);
+    }
+  };
+  histogram_.Update(counts);
+  meter_.Mark(counts.size());
 }
 
 

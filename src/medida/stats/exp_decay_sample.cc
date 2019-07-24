@@ -27,7 +27,9 @@ class ExpDecaySample::Impl {
   void Clear();
   std::uint64_t size() const;
   void Update(std::int64_t value);
+  void Update(std::vector<std::int64_t> const& values);
   void Update(std::int64_t value, Clock::time_point timestamp);
+  void Update(std::vector<std::int64_t> const& values, Clock::time_point timestamp);
   Snapshot MakeSnapshot() const;
  private:
   const double alpha_;
@@ -68,8 +70,18 @@ void ExpDecaySample::Update(std::int64_t value) {
 }
 
 
+void ExpDecaySample::Update(std::vector<std::int64_t> const& values) {
+  impl_->Update(values);
+}
+
+
 void ExpDecaySample::Update(std::int64_t value, Clock::time_point timestamp) {
   impl_->Update(value, timestamp);
+}
+
+
+void ExpDecaySample::Update(std::vector<std::int64_t> const& values, Clock::time_point timestamp) {
+  impl_->Update(values, timestamp);
 }
 
 
@@ -110,27 +122,42 @@ std::uint64_t ExpDecaySample::Impl::size() const {
 
 
 void ExpDecaySample::Impl::Update(std::int64_t value) {
-  Update(value, Clock::now());
+    std::vector<std::int64_t> tmp{value};
+    Update(tmp);
+}
+
+
+void ExpDecaySample::Impl::Update(std::vector<std::int64_t> const& values) {
+    Update(values, Clock::now());
 }
 
 
 void ExpDecaySample::Impl::Update(std::int64_t value, Clock::time_point timestamp) {
+    std::vector<std::int64_t> tmp{value};
+    Update(tmp, timestamp);
+}
+
+
+void ExpDecaySample::Impl::Update(std::vector<std::int64_t> const& values, Clock::time_point timestamp) {
   {
     if (timestamp >= nextScaleTime_) {
       Rescale(timestamp);
     }
     std::lock_guard<std::mutex> lock {mutex_};
-    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - startTime_);
-    auto priority = std::exp(alpha_ * dur.count()) / dist_(rng_);
-    auto count = ++count_;
+    for (auto value : values)
+    {
+      auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - startTime_);
+      auto priority = std::exp(alpha_ * dur.count()) / dist_(rng_);
+      auto count = ++count_;
 
-    if (count <= reservoirSize_) {
-      values_[priority] = value;
-    } else {
-      auto first = std::begin(values_)->first;
-      if (first < priority && values_.insert({priority, value}).second) {
-        while (values_.erase(first) == 0) {
-          first = std::begin(values_)->first;
+      if (count <= reservoirSize_) {
+        values_[priority] = value;
+      } else {
+        auto first = std::begin(values_)->first;
+        if (first < priority && values_.insert({priority, value}).second) {
+          while (values_.erase(first) == 0) {
+            first = std::begin(values_)->first;
+          }
         }
       }
     }
