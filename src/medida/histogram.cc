@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cmath>
 #include <mutex>
+#include <algorithm>
 
 #include "medida/stats/exp_decay_sample.h"
 #include "medida/stats/uniform_sample.h"
@@ -26,6 +27,7 @@ class Histogram::Impl {
   double mean() const;
   double std_dev() const;
   void Update(std::int64_t value);
+  void Update(std::vector<std::int64_t> const& value);
   std::uint64_t count() const;
   double variance() const;
   void Process(MetricProcessor& processor);
@@ -95,6 +97,10 @@ double Histogram::std_dev() const {
 
 void Histogram::Update(std::int64_t value) {
   impl_->Update(value);
+}
+
+void Histogram::Update(std::vector<std::int64_t> const& values) {
+  impl_->Update(values);
 }
 
 stats::Snapshot Histogram::GetSnapshot() const {
@@ -194,32 +200,43 @@ stats::Snapshot Histogram::Impl::GetSnapshot() const {
 
 
 void Histogram::Impl::Update(std::int64_t value) {
-  sample_->Update(value);
+    std::vector<std::int64_t> tmp{value};
+    Update(tmp);
+}
+
+
+void Histogram::Impl::Update(std::vector<std::int64_t> const& values) {
+  sample_->Update(values);
+  auto pair = std::minmax_element(begin(values), end(values));
+  auto minval = pair.first == values.end() ? 0 : *pair.first;
+  auto maxval = pair.second == values.end() ? 0 : *pair.second;
   if (count_ > 0) {
     auto cur_max = max_.load();
     auto cur_min = min_.load();
-    while (cur_max < value && !max_.compare_exchange_weak(cur_max, value)) {
+    while (cur_max < maxval && !max_.compare_exchange_weak(cur_max, maxval)) {
       // Spin until max is updated
     }
-    while(cur_min > value && !min_.compare_exchange_weak(cur_min, value)) {
+    while(cur_min > minval && !min_.compare_exchange_weak(cur_min, minval)) {
       // Spin until min is updated
     }
   } else {
-    max_ = value;
-    min_ = value;
+    max_ = maxval;
+    min_ = minval;
   }
-  sum_ += value;
-  auto new_count = ++count_;
   std::lock_guard<std::mutex> lock {variance_mutex_};
-  auto old_vm = variance_m_;
-  auto old_vs = variance_s_;
-  if (new_count > 1) {
-    variance_m_ = old_vm + (value - old_vm) / new_count;
-    variance_s_ = old_vs + (value - old_vm) * (value - variance_m_);
-  } else {
-    variance_m_ = value;
+  for (auto value : values)
+  {
+      sum_ += value;
+      auto new_count = ++count_;
+      auto old_vm = variance_m_;
+      auto old_vs = variance_s_;
+      if (new_count > 1) {
+          variance_m_ = old_vm + (value - old_vm) / new_count;
+          variance_s_ = old_vs + (value - old_vm) * (value - variance_m_);
+      } else {
+          variance_m_ = value;
+      }
   }
 }
-
 
 } // namespace medida

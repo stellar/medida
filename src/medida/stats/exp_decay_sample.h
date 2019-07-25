@@ -22,7 +22,9 @@ class ExpDecaySample : public Sample {
   virtual void Clear();
   virtual std::uint64_t size() const;
   virtual void Update(std::int64_t value);
+  virtual void Update(std::vector<std::int64_t> const& values);
   virtual void Update(std::int64_t value, Clock::time_point timestamp);
+  virtual void Update(std::vector<std::int64_t> const& values, Clock::time_point timestamp);
   virtual Snapshot MakeSnapshot() const;
  private:
   class Impl;

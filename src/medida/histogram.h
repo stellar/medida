@@ -26,6 +26,7 @@ class Histogram : public MetricInterface, SamplingInterface, SummarizableInterfa
   virtual double mean() const;
   virtual double std_dev() const;
   void Update(std::int64_t value);
+  void Update(std::vector<std::int64_t> const& values);
   std::uint64_t count() const;
   double variance() const;
   void Process(MetricProcessor& processor);

@@ -20,6 +20,7 @@ class UniformSample::Impl {
   void Clear();
   std::uint64_t size() const;
   void Update(std::int64_t value);
+  void Update(std::vector<std::int64_t> const& value);
   Snapshot MakeSnapshot() const;
  private:
   std::atomic<std::uint64_t> count_;
@@ -50,6 +51,11 @@ std::uint64_t UniformSample::size() const {
 
 void UniformSample::Update(std::int64_t value) {
   impl_->Update(value);
+}
+
+
+void UniformSample::Update(std::vector<std::int64_t> const& values) {
+  impl_->Update(values);
 }
 
 
@@ -91,17 +97,26 @@ std::uint64_t UniformSample::Impl::size() const {
 
 
 void UniformSample::Impl::Update(std::int64_t value) {
-  auto count = ++count_;
+    std::vector<std::int64_t> tmp{value};
+    Update(tmp);
+}
+
+
+void UniformSample::Impl::Update(std::vector<std::int64_t> const& values) {
   std::lock_guard<std::mutex> lock {mutex_};
-  auto size = values_.size();
-  if (count < size) {
-    values_[count - 1] = value;
-  } else {
-    std::uniform_int_distribution<uint64_t> uniform(0, count - 1);
-    auto rand = uniform(rng_);
-    if (rand < size) {
-      values_[rand] = value;
-    }
+  for (auto value : values)
+  {
+      auto count = ++count_;
+      auto size = values_.size();
+      if (count < size) {
+          values_[count - 1] = value;
+      } else {
+          std::uniform_int_distribution<uint64_t> uniform(0, count - 1);
+          auto rand = uniform(rng_);
+          if (rand < size) {
+              values_[rand] = value;
+          }
+      }
   }
 }
 

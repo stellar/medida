@@ -41,6 +41,7 @@ class Timer : public MetricInterface, MeteredInterface, SamplingInterface, Summa
   std::chrono::nanoseconds duration_unit() const;
   void Clear();
   void Update(std::chrono::nanoseconds duration);
+  void Update(std::vector<std::chrono::nanoseconds> durations);
   TimerContext TimeScope();
   void Time(std::function<void()>);
  private:
