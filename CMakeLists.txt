@@ -31,6 +31,7 @@ set(medida_SOURCES
   src/medida/stats/ewma.cc
   src/medida/stats/uniform_sample.cc
   src/medida/stats/exp_decay_sample.cc
+  src/medida/stats/sliding_window_sample.cc
   src/medida/counter.cc
   src/medida/meter.cc
   src/medida/metric_name.cc
@@ -67,6 +68,7 @@ set(medida_HEADERS
   src/medida/reporting/util.h
   src/medida/stats/ewma.h
   src/medida/stats/exp_decay_sample.h
+  src/medida/stats/sliding_window_sample.h
   src/medida/stats/sample.h
   src/medida/stats/snapshot.h
   src/medida/stats/uniform_sample.h
@@ -130,6 +132,7 @@ install(FILES
 install(FILES
   src/medida/stats/ewma.h
   src/medida/stats/exp_decay_sample.h
+  src/medida/stats/sliding_window_sample.h
   src/medida/stats/sample.h
   src/medida/stats/snapshot.h
   src/medida/stats/uniform_sample.h
