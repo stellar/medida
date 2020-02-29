@@ -23,6 +23,7 @@ class SlidingWindowSample::Impl
     Impl(std::size_t windowSize, std::chrono::seconds windowTime);
     ~Impl();
     void Clear();
+    void Seed(size_t seed);
     std::uint64_t size();
     void Update(std::int64_t value);
     void Update(std::int64_t value, Clock::time_point timestamp);
@@ -53,6 +54,12 @@ void
 SlidingWindowSample::Clear()
 {
     impl_->Clear();
+}
+
+void
+SlidingWindowSample::Seed(size_t seed)
+{
+    impl_->Seed(seed);
 }
 
 std::uint64_t
@@ -97,6 +104,13 @@ SlidingWindowSample::Impl::Impl(std::size_t windowSize,
 
 SlidingWindowSample::Impl::~Impl()
 {
+}
+
+void
+SlidingWindowSample::Impl::Seed(size_t seed)
+{
+    std::lock_guard<std::mutex> lock{mutex_};
+    rng_.seed(seed);
 }
 
 void

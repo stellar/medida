@@ -27,6 +27,7 @@ class SlidingWindowSample : public Sample
     SlidingWindowSample(std::size_t windowSize,
                         std::chrono::seconds windowTime);
     ~SlidingWindowSample();
+    virtual void Seed(size_t);
     virtual void Clear();
     virtual std::uint64_t size() const;
     virtual void Update(std::int64_t value);
