@@ -56,10 +56,16 @@ TEST_F(TimerTest, aBlankTimer) {
 
 
 TEST_F(TimerTest, timingASeriesOfEvents) {
+  // Need to sleep between events so sliding window assigns
+  // them to separate timeslices.
   timer.Update(std::chrono::milliseconds(10));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   timer.Update(std::chrono::milliseconds(20));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   timer.Update(std::chrono::milliseconds(20));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   timer.Update(std::chrono::milliseconds(30));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   timer.Update(std::chrono::milliseconds(40));
 
   EXPECT_EQ(5, timer.count());

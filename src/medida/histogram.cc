@@ -10,10 +10,15 @@
 
 #include "medida/stats/exp_decay_sample.h"
 #include "medida/stats/uniform_sample.h"
+#include "medida/stats/sliding_window_sample.h"
 
 namespace medida {
 
 static const double kDefaultAlpha = 0.015;
+
+// Sliding windows are 5 minutes by default. They also respect the sample-size
+// limit by stochastic rate-limiting of additions.
+static const std::chrono::seconds kDefaultWindowTime = std::chrono::seconds(5 * 60);
 
 class Histogram::Impl {
  public:
@@ -114,6 +119,9 @@ Histogram::Impl::Impl(SampleType sample_type) {
     sample_ = std::unique_ptr<stats::Sample>(new stats::UniformSample(kDefaultSampleSize));
   } else if (sample_type == kBiased) {
     sample_ = std::unique_ptr<stats::Sample>(new stats::ExpDecaySample(kDefaultSampleSize, kDefaultAlpha));
+  } else if (sample_type == kSliding) {
+    sample_ = std::unique_ptr<stats::Sample>(new stats::SlidingWindowSample(kDefaultSampleSize,
+                                                                            kDefaultWindowTime));
   } else {
       throw std::invalid_argument("invalid sample_type");
   }
