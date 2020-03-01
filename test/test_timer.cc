@@ -76,8 +76,8 @@ TEST_F(TimerTest, timingASeriesOfEvents) {
 
   auto snapshot = timer.GetSnapshot();
   EXPECT_NEAR(20.0, snapshot.getMedian(), 0.001);
-  EXPECT_NEAR(35.0, snapshot.get75thPercentile(), 0.001);
-  EXPECT_NEAR(40.0, snapshot.get99thPercentile(), 0.001);
+  EXPECT_NEAR(30.0, snapshot.get75thPercentile(), 0.001);
+  EXPECT_NEAR(39.600000000000001, snapshot.get99thPercentile(), 0.001);
   EXPECT_EQ(5, snapshot.size());
 }
 
