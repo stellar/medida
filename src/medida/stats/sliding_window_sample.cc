@@ -110,7 +110,7 @@ void
 SlidingWindowSample::Impl::Seed(size_t seed)
 {
     std::lock_guard<std::mutex> lock{mutex_};
-    rng_.seed(seed);
+    rng_.seed(static_cast<std::uint32_t>(seed));
 }
 
 void
