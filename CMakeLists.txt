@@ -32,6 +32,7 @@ set(medida_SOURCES
   src/medida/stats/uniform_sample.cc
   src/medida/stats/exp_decay_sample.cc
   src/medida/stats/sliding_window_sample.cc
+  src/medida/buckets.cc
   src/medida/counter.cc
   src/medida/meter.cc
   src/medida/metric_name.cc
@@ -48,6 +49,7 @@ set(medida_SOURCES
 )
 
 set(medida_HEADERS
+  src/medida/buckets.h
   src/medida/medida.h
   src/medida/counter.h
   src/medida/histogram.h
