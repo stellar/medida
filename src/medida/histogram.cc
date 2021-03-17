@@ -22,7 +22,7 @@ static const std::chrono::seconds kDefaultWindowTime = std::chrono::seconds(5 * 
 
 class Histogram::Impl {
  public:
-  Impl(SampleType sample_type = kUniform);
+  Impl(SampleType sample_type = kSliding);
   ~Impl();
   stats::Snapshot GetSnapshot() const;
   double sum() const;

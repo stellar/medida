@@ -18,7 +18,7 @@ class MetricsRegistry::Impl {
   ~Impl();
   Counter& NewCounter(const MetricName &name, std::int64_t init_value = 0);
   Histogram& NewHistogram(const MetricName &name,
-      SamplingInterface::SampleType sample_type = SamplingInterface::kUniform);
+      SamplingInterface::SampleType sample_type = SamplingInterface::kSliding);
   Meter& NewMeter(const MetricName &name, std::string event_type, 
       Clock::duration rate_unit = std::chrono::seconds(1));
   Timer& NewTimer(const MetricName &name,

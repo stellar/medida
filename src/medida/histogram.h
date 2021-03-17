@@ -17,7 +17,7 @@ namespace medida {
 
 class Histogram : public MetricInterface, SamplingInterface, SummarizableInterface {
  public:
-  Histogram(SampleType sample_type = kUniform);
+  Histogram(SampleType sample_type = kSliding);
   ~Histogram();
   virtual stats::Snapshot GetSnapshot() const;
   virtual double sum() const;
