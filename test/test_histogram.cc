@@ -12,7 +12,7 @@ using namespace medida;
 
 TEST(HistogramTest, anEmptyHistogram) {
   MetricsRegistry registry {};
-  auto& histogram = registry.NewHistogram({"a", "b", "c"});
+  auto& histogram = registry.NewHistogram({"a", "b", "c"}, SamplingInterface::kUniform);
 
   EXPECT_EQ(0, histogram.count());
   EXPECT_EQ(0.0, histogram.max());
@@ -31,7 +31,7 @@ TEST(HistogramTest, anEmptyHistogram) {
 
 TEST(HistogramTest, aHistogramWith1000Elements) {
   MetricsRegistry registry {};
-  auto& histogram = registry.NewHistogram({"a", "b", "c"});
+  auto& histogram = registry.NewHistogram({"a", "b", "c"}, SamplingInterface::kUniform);
 
   for (auto i = 1; i <= 1000; i++) {
     histogram.Update(i);
