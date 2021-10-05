@@ -17,6 +17,7 @@ namespace reporting {
 class JsonReporter : public MetricProcessor {
  public:
   JsonReporter(MetricsRegistry &registry);
+  JsonReporter(std::map<MetricName, std::shared_ptr<MetricInterface>> const& metricsToReport);
   virtual ~JsonReporter();
   virtual void Process(Counter& counter);
   virtual void Process(Meter& meter);
