@@ -8,6 +8,7 @@
 #include <atomic>
 #include <mutex>
 #include <random>
+#include <stdrandom.h>
 #include <vector>
 
 namespace medida {
@@ -97,7 +98,7 @@ void UniformSample::Impl::Update(std::int64_t value) {
   if (count < size) {
     values_[count - 1] = value;
   } else {
-    std::uniform_int_distribution<uint64_t> uniform(0, count - 1);
+    stellar::uniform_int_distribution<uint64_t> uniform(0, count - 1);
     auto rand = uniform(rng_);
     if (rand < size) {
       values_[rand] = value;
