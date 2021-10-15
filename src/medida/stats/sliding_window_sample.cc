@@ -9,7 +9,6 @@
 #include <deque>
 #include <mutex>
 #include <random>
-#include <stdrandom.h>
 
 #include "medida/stats/snapshot.h"
 
@@ -37,7 +36,7 @@ class SlidingWindowSample::Impl
     const std::chrono::microseconds timeSlice_;
     std::uint32_t samplesInCurrentSlice_;
     std::default_random_engine rng_;
-    stellar::uniform_int_distribution<std::uint32_t> dist_;
+    std::uniform_int_distribution<std::uint32_t> dist_;
     std::deque<std::pair<double, Clock::time_point>> values_;
 };
 
