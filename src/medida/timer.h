@@ -22,7 +22,8 @@ namespace medida {
 class Timer : public MetricInterface, MeteredInterface, SamplingInterface, SummarizableInterface {
  public:
   Timer(std::chrono::nanoseconds duration_unit = std::chrono::milliseconds(1),
-      std::chrono::nanoseconds rate_unit = std::chrono::seconds(1));
+      std::chrono::nanoseconds rate_unit = std::chrono::seconds(1),
+      std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Timer();
   void Process(MetricProcessor& processor);
   virtual std::chrono::nanoseconds rate_unit() const;
