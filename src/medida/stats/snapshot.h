@@ -5,6 +5,8 @@
 #ifndef MEDIDA_METRICS_SNAPSHOT_H_
 #define MEDIDA_METRICS_SNAPSHOT_H_
 
+#include "medida/stats/ckms.h"
+
 #include <memory>
 #include <vector>
 
@@ -14,21 +16,28 @@ namespace stats {
 class Snapshot {
  public:
   Snapshot(const std::vector<double>& values);
+  Snapshot(const CKMS& ckms);
   ~Snapshot();
   Snapshot(Snapshot const&) = delete;
   Snapshot& operator=(Snapshot const&) = delete;
   Snapshot(Snapshot&&);
   std::size_t size() const;
-  double getValue(double quantile) const;
-  double getMedian() const;
-  double get75thPercentile() const;
-  double get95thPercentile() const;
-  double get98thPercentile() const;
-  double get99thPercentile() const;
-  double get999thPercentile() const;
+  double getValue(double quantile);
+  double getMedian();
+  double get75thPercentile();
+  double get95thPercentile();
+  double get98thPercentile();
+  double get99thPercentile();
+  double get999thPercentile();
+  double min();
+  double max();
+  double sum();
+  double variance();
   std::vector<double> getValues() const;
- private:
   class Impl;
+  class VectorImpl;
+  class CKMSImpl;
+ private:
   void checkImpl() const;
   std::unique_ptr<Impl> impl_;
 };

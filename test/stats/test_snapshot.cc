@@ -14,7 +14,7 @@ struct SnapshotTest : public ::testing::Test {
         snapshot {values} {
   };
   const std::vector<double> values;
-  const Snapshot snapshot;
+  Snapshot snapshot;
 };
 
 
