@@ -5,6 +5,7 @@
 #include "medida/histogram.h"
 
 #include <gtest/gtest.h>
+#include <thread>
 
 #include "medida/metrics_registry.h"
 
@@ -49,4 +50,45 @@ TEST(HistogramTest, aHistogramWith1000Elements) {
   EXPECT_NEAR(750.25, snapshot.get75thPercentile(), 0.0001);
   EXPECT_NEAR(990.00999999999999, snapshot.get99thPercentile(), 0.0001);
   EXPECT_EQ(1000, snapshot.size());
+}
+
+TEST(HistogramTest, ckmsWindowSize) {
+  MetricsRegistry r1 {std::chrono::seconds(1)}, r2 {std::chrono::seconds(2000000000)};
+  auto& histogram1 = r1.NewHistogram({"a", "b", "c"}, SamplingInterface::kCKMS);
+  auto& histogram2 = r2.NewHistogram({"a", "b", "c"}, SamplingInterface::kCKMS);
+
+  histogram1.Update(123);
+  histogram2.Update(123);
+
+  // CKMS reports the previous window.
+  // The value 123 was added in the current window,
+  // so we shouldn't report anything yet.
+  EXPECT_EQ(0, histogram1.GetSnapshot().size());
+  EXPECT_EQ(0, histogram2.GetSnapshot().size());
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  // Since r1 uses 1 second as the window size,
+  // the value 123 must be in the previous window now.
+  // r1 uses 2000000000 seconds (= approx. 63 years) as the window size,
+  // so the value 123 must not be in the current window yet.
+  EXPECT_EQ(1, histogram1.GetSnapshot().size());
+  EXPECT_EQ(0, histogram2.GetSnapshot().size());
+}
+
+TEST(HistogramTest, ckmsMetrics) {
+  MetricsRegistry r {std::chrono::seconds(1)};
+  auto& h = r.NewHistogram({"a", "b", "c"}, SamplingInterface::kCKMS);
+
+  for (int i = 1; i <= 7; i++) {
+      h.Update(i);
+  }
+
+  auto s = h.GetSnapshot();
+
+  EXPECT_EQ(1, h.min());
+  EXPECT_EQ(7, h.max());
+  EXPECT_NEAR(2.1602468994693, h.std_dev(), 1e-6);
+  EXPECT_EQ(28, h.sum());
+  EXPECT_EQ(7, h.count());
 }

@@ -14,11 +14,11 @@ namespace medida {
 
 class MetricsRegistry::Impl {
  public:
-  Impl();
+  Impl(std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Impl();
   Counter& NewCounter(const MetricName &name, std::int64_t init_value = 0);
   Histogram& NewHistogram(const MetricName &name,
-      SamplingInterface::SampleType sample_type = SamplingInterface::kSliding);
+      SamplingInterface::SampleType sample_type = SamplingInterface::kCKMS);
   Meter& NewMeter(const MetricName &name, std::string event_type, 
       Clock::duration rate_unit = std::chrono::seconds(1));
   Timer& NewTimer(const MetricName &name,
@@ -33,12 +33,14 @@ class MetricsRegistry::Impl {
   void ProcessAll(MetricProcessor& processor);
  private:
   std::map<MetricName, std::shared_ptr<MetricInterface>> metrics_;
+  std::chrono::seconds const ckms_window_size_;
   mutable std::mutex mutex_;
   template<typename T, typename... Args> T& NewMetric(const MetricName& name, Args... args);
 };
 
 
-MetricsRegistry::MetricsRegistry() : impl_ {new MetricsRegistry::Impl} {
+MetricsRegistry::MetricsRegistry(std::chrono::seconds ckms_window_size)
+    : impl_ {new MetricsRegistry::Impl(ckms_window_size)} {
 }
 
 
@@ -85,7 +87,8 @@ std::map<MetricName, std::shared_ptr<MetricInterface>> MetricsRegistry::GetAllMe
 // === Implementation ===
 
 
-MetricsRegistry::Impl::Impl() {
+MetricsRegistry::Impl::Impl(std::chrono::seconds ckms_window_size)
+    : ckms_window_size_(ckms_window_size) {
 }
 
 
@@ -100,7 +103,7 @@ Counter& MetricsRegistry::Impl::NewCounter(const MetricName &name, std::int64_t 
 
 Histogram& MetricsRegistry::Impl::NewHistogram(const MetricName &name,
     SamplingInterface::SampleType sample_type) {
-  return NewMetric<Histogram>(name, sample_type);
+  return NewMetric<Histogram>(name, sample_type, ckms_window_size_);
 }
 
 

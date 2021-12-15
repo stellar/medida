@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <chrono>
 
 #include "medida/metric_interface.h"
 #include "medida/sampling_interface.h"
@@ -17,7 +18,8 @@ namespace medida {
 
 class Histogram : public MetricInterface, SamplingInterface, SummarizableInterface {
  public:
-  Histogram(SampleType sample_type = kSliding);
+  Histogram(SampleType sample_type = kCKMS,
+            std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Histogram();
   virtual stats::Snapshot GetSnapshot() const;
   virtual double sum() const;
