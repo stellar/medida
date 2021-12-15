@@ -28,7 +28,7 @@ class ExpDecaySample::Impl {
   std::uint64_t size() const;
   void Update(std::int64_t value);
   void Update(std::int64_t value, Clock::time_point timestamp);
-  Snapshot MakeSnapshot() const;
+  Snapshot MakeSnapshot(uint64_t divisor = 1) const;
  private:
   const double alpha_;
   const std::uint64_t reservoirSize_;
@@ -73,8 +73,8 @@ void ExpDecaySample::Update(std::int64_t value, Clock::time_point timestamp) {
 }
 
 
-Snapshot ExpDecaySample::MakeSnapshot() const {
-  return impl_->MakeSnapshot();
+Snapshot ExpDecaySample::MakeSnapshot(uint64_t divisor) const {
+  return impl_->MakeSnapshot(divisor);
 }
 
 
@@ -166,13 +166,13 @@ void ExpDecaySample::Impl::Rescale(const Clock::time_point& when) {
 }
 
 
-Snapshot ExpDecaySample::Impl::MakeSnapshot() const {
+Snapshot ExpDecaySample::Impl::MakeSnapshot(uint64_t divisor) const {
   std::vector<double> vals;
   vals.reserve(values_.size());
   for (auto& kv : values_) {
     vals.push_back(kv.second);
   }
-  return {vals};
+  return {vals, divisor};
 }
 
 

@@ -25,7 +25,7 @@ class Histogram::Impl {
  public:
   Impl(SampleType sample_type = kCKMS, std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Impl();
-  stats::Snapshot GetSnapshot() const;
+  stats::Snapshot GetSnapshot(uint64_t divisor) const;
   double sum() const;
   double max() const;
   double min() const;
@@ -103,8 +103,8 @@ void Histogram::Update(std::int64_t value) {
   impl_->Update(value);
 }
 
-stats::Snapshot Histogram::GetSnapshot() const {
-  return impl_->GetSnapshot();
+stats::Snapshot Histogram::GetSnapshot(uint64_t divisor) const {
+  return impl_->GetSnapshot(divisor);
 }
 
 double Histogram::variance() const {
@@ -206,8 +206,8 @@ double Histogram::Impl::variance() const {
 }
 
 
-stats::Snapshot Histogram::Impl::GetSnapshot() const {
-  return sample_->MakeSnapshot();
+stats::Snapshot Histogram::Impl::GetSnapshot(uint64_t divisor = 1) const {
+  return sample_->MakeSnapshot(divisor);
 }
 
 

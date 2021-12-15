@@ -23,11 +23,10 @@ class CKMSSample::Impl {
   void Clear();
   std::uint64_t size();
   std::uint64_t size(Clock::time_point timestamp);
-  std::uint64_t max();
   void Update(std::int64_t value);
   void Update(std::int64_t value, Clock::time_point timestamp);
-  Snapshot MakeSnapshot();
-  Snapshot MakeSnapshot(Clock::time_point timestamp);
+  Snapshot MakeSnapshot(uint64_t divisor = 1);
+  Snapshot MakeSnapshot(Clock::time_point timestamp, uint64_t divisor = 1);
  private:
   std::mutex mutex_;
   std::shared_ptr<CKMS> prev_window_, cur_window_;
@@ -50,10 +49,6 @@ void CKMSSample::Clear() {
   impl_->Clear();
 }
 
-double CKMSSample::max() const {
-  return impl_->max();
-}
-
 std::uint64_t CKMSSample::size() const {
   return impl_->size();
 }
@@ -70,12 +65,12 @@ void CKMSSample::Update(std::int64_t value, Clock::time_point timestamp) {
   impl_->Update(value, timestamp);
 }
 
-Snapshot CKMSSample::MakeSnapshot() const {
-  return impl_->MakeSnapshot();
+Snapshot CKMSSample::MakeSnapshot(uint64_t divisor) const {
+  return impl_->MakeSnapshot(divisor);
 }
 
-Snapshot CKMSSample::MakeSnapshot(Clock::time_point timestamp) const {
-  return impl_->MakeSnapshot(timestamp);
+Snapshot CKMSSample::MakeSnapshot(Clock::time_point timestamp, uint64_t divisor) const {
+  return impl_->MakeSnapshot(timestamp, divisor);
 }
 
 // === Implementation ===
@@ -143,10 +138,6 @@ std::uint64_t CKMSSample::Impl::size() {
     return size(Clock::now());
 }
 
-std::uint64_t CKMSSample::Impl::max() {
-    return MakeSnapshot().max();
-}
-
 void CKMSSample::Impl::Update(std::int64_t value) {
   Update(value, Clock::now());
 }
@@ -158,17 +149,17 @@ void CKMSSample::Impl::Update(std::int64_t value, Clock::time_point timestamp) {
     }
 }
 
-Snapshot CKMSSample::Impl::MakeSnapshot(Clock::time_point timestamp) {
+Snapshot CKMSSample::Impl::MakeSnapshot(Clock::time_point timestamp, uint64_t divisor) {
     std::lock_guard<std::mutex> lock{mutex_};
     if (AdvanceWindows(timestamp)) {
-        return {*prev_window_};
+        return {*prev_window_, divisor};
     } else {
         return {CKMS()};
     }
 }
 
-Snapshot CKMSSample::Impl::MakeSnapshot() {
-    return MakeSnapshot(Clock::now());
+Snapshot CKMSSample::Impl::MakeSnapshot(uint64_t divisor) {
+    return MakeSnapshot(Clock::now(), divisor);
 }
 
 } // namespace stats

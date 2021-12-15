@@ -87,11 +87,36 @@ TEST_F(TimerTest, timingASeriesOfEvents) {
 }
 
 
+TEST_F(TimerTest, timingASeriesOfShortEvents) {
+  // This test makes sure that the calculation and casting are done correctly,
+  // and prevents short events from being ignored as rounding errors.
+  for (int i = 0; i < 10; i++) {
+    timer.Update(std::chrono::nanoseconds(1));
+  }
+
+  EXPECT_EQ(10, timer.count());
+  EXPECT_NEAR(1e-6, timer.min(), 1e-9);
+  EXPECT_NEAR(1e-6, timer.max(), 1e-9);
+  EXPECT_NEAR(1e-6, timer.mean(), 1e-9);
+  EXPECT_NEAR(0, timer.std_dev(), 1e-9);
+
+  // Wait for 1 second so that we're in the next window
+  // and CKMSSample reports {1 nano second, 1 nano second, ..., 1 nano second}.
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  auto snapshot = timer.GetSnapshot();
+  EXPECT_NEAR(1e-6, snapshot.getMedian(), 1e-9);
+  EXPECT_NEAR(1e-6, snapshot.get75thPercentile(), 1e-9);
+  EXPECT_NEAR(1e-6, snapshot.get99thPercentile(), 1e-9);
+  EXPECT_EQ(10, snapshot.size());
+}
+
+
 TEST_F(TimerTest, timingVariantValues) {
   timer.Update(std::chrono::nanoseconds(9223372036854775807));  // INT64_MAX
   timer.Update(std::chrono::nanoseconds(0));
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  EXPECT_NEAR(6.521908912666392E12, timer.std_dev(), 1);
+  EXPECT_NEAR(6.521908912666392E12, timer.std_dev(), 0.001);
 }
 
 

@@ -25,7 +25,7 @@ class Timer::Impl {
   double five_minute_rate();
   double one_minute_rate();
   double mean_rate();
-  stats::Snapshot GetSnapshot() const;
+  stats::Snapshot GetSnapshot(uint64_t divisor) const;
   double max() const;
   double min() const;
   double mean() const;
@@ -138,8 +138,8 @@ void Timer::Update(std::chrono::nanoseconds duration) {
 }
 
 
-stats::Snapshot Timer::GetSnapshot() const {
-  return impl_->GetSnapshot();
+stats::Snapshot Timer::GetSnapshot(uint64_t divisor) const {
+  return impl_->GetSnapshot(divisor);
 }
 
 
@@ -189,27 +189,27 @@ std::uint64_t Timer::Impl::count() const {
 
 
 double Timer::Impl::min() const {
-  return histogram_.min();
+  return histogram_.min() / duration_unit_nanos_;
 }
 
 
 double Timer::Impl::max() const {
-  return histogram_.max();
+  return histogram_.max() / duration_unit_nanos_;
 }
 
 
 double Timer::Impl::mean() const {
-  return histogram_.mean();
+  return histogram_.mean() / duration_unit_nanos_;
 }
 
 
 double Timer::Impl::std_dev() const {
-  return histogram_.std_dev();
+  return histogram_.std_dev() / duration_unit_nanos_;
 }
 
 
 double Timer::Impl::sum() const {
-  return histogram_.sum();
+  return histogram_.sum() / duration_unit_nanos_;
 }
 
 
@@ -251,14 +251,19 @@ void Timer::Impl::Clear() {
 void Timer::Impl::Update(std::chrono::nanoseconds duration) {
   auto count = duration.count();
   if (count >= 0) {
-    histogram_.Update(count / duration_unit_nanos_);
+    histogram_.Update(count);
     meter_.Mark();
   }
 }
 
 
-stats::Snapshot Timer::Impl::GetSnapshot() const {
-  return histogram_.GetSnapshot();
+stats::Snapshot Timer::Impl::GetSnapshot(uint64_t divisor) const {
+  // Timer should always use duration_unit_nanos_ as the divisor
+  // since that is the only thing that makes sense.
+  // However, Snapshot class inherits GetSnapshot from SamplingInterface
+  // which forces GetSnapshot to have an argument.
+  // Therefore, we will ignore the divisor argument, and pass duration_unit_nanos_.
+  return histogram_.GetSnapshot(duration_unit_nanos_);
 }
 
 

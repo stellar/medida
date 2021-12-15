@@ -21,7 +21,7 @@ class Histogram : public MetricInterface, SamplingInterface, SummarizableInterfa
   Histogram(SampleType sample_type = kCKMS,
             std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Histogram();
-  virtual stats::Snapshot GetSnapshot() const;
+  virtual stats::Snapshot GetSnapshot(uint64_t divisor = 1) const;
   virtual double sum() const;
   virtual double max() const;
   virtual double min() const;

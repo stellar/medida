@@ -36,7 +36,7 @@ class Snapshot::Impl {
 
 class Snapshot::VectorImpl : public Snapshot::Impl {
  public:
-  VectorImpl(const std::vector<double>& values);
+  VectorImpl(const std::vector<double>& values, uint64_t divisor = 1);
   ~VectorImpl();
   std::size_t size() const override;
   double getValue(double quantile) override;
@@ -49,7 +49,7 @@ class Snapshot::VectorImpl : public Snapshot::Impl {
 
 class Snapshot::CKMSImpl : public Snapshot::Impl {
  public:
-  CKMSImpl(const CKMS& ckms);
+  CKMSImpl(const CKMS& ckms, uint64_t divisor = 1);
   ~CKMSImpl();
   std::size_t size() const override;
   double getValue(double quantile) override;
@@ -57,15 +57,16 @@ class Snapshot::CKMSImpl : public Snapshot::Impl {
   std::vector<double> getValues() const override;
  private:
   CKMS ckms_;
+  uint64_t const divisor_;
 };
 
 
-Snapshot::Snapshot(const std::vector<double>& values)
-  : impl_ {new Snapshot::VectorImpl {values}} {
+Snapshot::Snapshot(const std::vector<double>& values, uint64_t divisor)
+  : impl_ {new Snapshot::VectorImpl {values, divisor}} {
 }
 
-Snapshot::Snapshot(const CKMS& ckms)
-  : impl_ {new Snapshot::CKMSImpl {ckms}} {
+Snapshot::Snapshot(const CKMS& ckms, uint64_t divisor)
+  : impl_ {new Snapshot::CKMSImpl {ckms, divisor}} {
 }
 
 Snapshot::Snapshot(Snapshot&& other)
@@ -144,9 +145,12 @@ double Snapshot::get999thPercentile() {
 // === Implementation ===
 
 
-Snapshot::VectorImpl::VectorImpl(const std::vector<double>& values)
+Snapshot::VectorImpl::VectorImpl(const std::vector<double>& values, uint64_t divisor)
     : values_ (values) {
   std::sort(std::begin(this->values_), std::end(this->values_));
+  std::for_each(std::begin(this->values_),
+                std::end(this->values_),
+                [divisor](double& v) { v /= divisor; } );
 }
 
 
@@ -234,8 +238,9 @@ double Snapshot::VectorImpl::getValue(double quantile)
     return lower + (delta * (upper - lower));
 }
 
-Snapshot::CKMSImpl::CKMSImpl(const CKMS& ckms)
-    : ckms_ (ckms) {
+Snapshot::CKMSImpl::CKMSImpl(const CKMS& ckms, uint64_t divisor)
+    : ckms_ (ckms),
+      divisor_ (divisor) {
 }
 
 
@@ -253,11 +258,11 @@ std::vector<double> Snapshot::CKMSImpl::getValues() const {
 }
 
 double Snapshot::CKMSImpl::max() {
-    return ckms_.max();
+    return ckms_.max() / (double) divisor_;
 }
 
 double Snapshot::CKMSImpl::getValue(double quantile) {
-    return ckms_.get(quantile);
+    return ckms_.get(quantile) / (double) divisor_;
 }
 
 double Snapshot::Impl::getMedian() {

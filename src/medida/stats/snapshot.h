@@ -15,8 +15,8 @@ namespace stats {
 
 class Snapshot {
  public:
-  Snapshot(const std::vector<double>& values);
-  Snapshot(const CKMS& ckms);
+  Snapshot(const std::vector<double>& values, uint64_t divisor = 1);
+  Snapshot(const CKMS& ckms, uint64_t divisor = 1);
   ~Snapshot();
   Snapshot(Snapshot const&) = delete;
   Snapshot& operator=(Snapshot const&) = delete;
