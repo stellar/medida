@@ -12,7 +12,6 @@
 #include <map>
 #include <mutex>
 #include <random>
-#include <cassert>
 
 namespace medida {
 namespace stats {
@@ -35,13 +34,12 @@ class CKMSSample::Impl {
  private:
   std::mutex mutex_;
   std::shared_ptr<CKMS> prev_window_, cur_window_;
-  mutable Clock::time_point last_asserted_time_;
   Clock::time_point cur_window_begin_;
   std::chrono::seconds window_size_;
   Clock::time_point CalculateCurrentWindowStartingPoint(Clock::time_point time) const;
-  void AssertValidTime(Clock::time_point const& timestamp) const;
   bool IsInCurrentWindow(Clock::time_point const& timestamp) const;
   bool IsInNextWindow(Clock::time_point const& timestamp) const;
+  bool AdvanceWindows(Clock::time_point timestamp);
 };
 
 CKMSSample::CKMSSample(std::chrono::seconds window_size) : impl_ {new CKMSSample::Impl {window_size}} {
@@ -101,11 +99,6 @@ Clock::time_point CKMSSample::Impl::CalculateCurrentWindowStartingPoint(Clock::t
     return time - (std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()) % window_size_);
 }
 
-void CKMSSample::Impl::AssertValidTime(Clock::time_point const& timestamp) const {
-    assert(last_asserted_time_ <= timestamp);
-    last_asserted_time_ = timestamp;
-}
-
 bool CKMSSample::Impl::IsInCurrentWindow(Clock::time_point const& timestamp) const {
     return cur_window_begin_ <= timestamp && timestamp < cur_window_begin_ + window_size_;
 }
@@ -114,10 +107,35 @@ bool CKMSSample::Impl::IsInNextWindow(Clock::time_point const& timestamp) const 
     return cur_window_begin_ + window_size_ <= timestamp && timestamp < cur_window_begin_ + 2 * window_size_;
 }
 
+bool CKMSSample::Impl::AdvanceWindows(Clock::time_point timestamp) {
+    if (timestamp < cur_window_begin_) {
+        // The timestamp is in the past.
+        // By design, CKMSSample doesn't update past data.
+        return false;
+    }
+
+    if (!IsInCurrentWindow(timestamp)) {
+        // Enough time has passed, and the current window is no longer current.
+        // We need to shift it.
+
+        if (IsInNextWindow(timestamp)) {
+            // The current window becomes the previous one.
+            prev_window_.swap(cur_window_);
+            cur_window_->reset();
+            cur_window_begin_ += window_size_;
+        } else {
+            // We haven't had any input for long enough that both prev_window_ and cur_window_ should be empty.
+            prev_window_->reset();
+            cur_window_->reset();
+            cur_window_begin_ = CalculateCurrentWindowStartingPoint(timestamp);
+        }
+    }
+    return true;
+}
+
 CKMSSample::Impl::Impl(std::chrono::seconds window_size) :
     prev_window_(std::make_shared<CKMS>(CKMS())),
     cur_window_(std::make_shared<CKMS>(CKMS())),
-    last_asserted_time_(),
     cur_window_begin_(),
     window_size_(window_size) {
 }
@@ -129,7 +147,6 @@ void CKMSSample::Impl::Clear() {
     std::lock_guard<std::mutex> lock{mutex_};
     prev_window_->reset();
     cur_window_->reset();
-    last_asserted_time_ = std::chrono::time_point<Clock>();
     cur_window_begin_ = std::chrono::time_point<Clock>();
 }
 
@@ -163,33 +180,15 @@ void CKMSSample::Impl::Update(std::int64_t value) {
 
 void CKMSSample::Impl::Update(std::int64_t value, Clock::time_point timestamp) {
     std::lock_guard<std::mutex> lock{mutex_};
-    AssertValidTime(timestamp);
-    if (!IsInCurrentWindow(timestamp)) {
-        // Enough time has passed, and the current window is no longer current.
-        // We need to shift it.
-
-        if (IsInNextWindow(timestamp)) {
-            // The current window becomes the previous one.
-            prev_window_.swap(cur_window_);
-            cur_window_->reset();
-            cur_window_begin_ += window_size_;
-        } else {
-            // We haven't had any input for long enough that both prev_window_ and cur_window_ should be empty.
-            prev_window_->reset();
-            cur_window_->reset();
-            cur_window_begin_ = CalculateCurrentWindowStartingPoint(timestamp);
-        }
+    if (AdvanceWindows(timestamp)) {
+        cur_window_->insert(value);
     }
-    cur_window_->insert(value);
 }
 
 Snapshot CKMSSample::Impl::MakeSnapshot(Clock::time_point timestamp) {
     std::lock_guard<std::mutex> lock{mutex_};
-    AssertValidTime(timestamp);
-    if (IsInCurrentWindow(timestamp)) {
+    if (AdvanceWindows(timestamp)) {
         return {*prev_window_};
-    } else if (IsInNextWindow(timestamp)) {
-        return {*cur_window_};
     } else {
         return {CKMS()};
     }
