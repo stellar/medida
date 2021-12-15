@@ -23,10 +23,7 @@ class CKMSSample::Impl {
   void Clear();
   std::uint64_t size();
   std::uint64_t size(Clock::time_point timestamp);
-  std::uint64_t sum();
-  std::uint64_t min();
   std::uint64_t max();
-  std::uint64_t variance();
   void Update(std::int64_t value);
   void Update(std::int64_t value, Clock::time_point timestamp);
   Snapshot MakeSnapshot();
@@ -53,20 +50,8 @@ void CKMSSample::Clear() {
   impl_->Clear();
 }
 
-double CKMSSample::min() const {
-  return impl_->min();
-}
-
 double CKMSSample::max() const {
   return impl_->max();
-}
-
-double CKMSSample::variance() const {
-  return impl_->variance();
-}
-
-double CKMSSample::sum() const {
-  return impl_->sum();
 }
 
 std::uint64_t CKMSSample::size() const {
@@ -158,20 +143,8 @@ std::uint64_t CKMSSample::Impl::size() {
     return size(Clock::now());
 }
 
-std::uint64_t CKMSSample::Impl::min() {
-    return MakeSnapshot().min();
-}
-
 std::uint64_t CKMSSample::Impl::max() {
     return MakeSnapshot().max();
-}
-
-std::uint64_t CKMSSample::Impl::sum() {
-    return MakeSnapshot().sum();
-}
-
-std::uint64_t CKMSSample::Impl::variance() {
-    return MakeSnapshot().variance();
 }
 
 void CKMSSample::Impl::Update(std::int64_t value) {

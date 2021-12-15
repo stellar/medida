@@ -52,10 +52,7 @@ class CKMSSample : public Sample {
   virtual void Update(std::int64_t value, Clock::time_point timestamp);
   virtual Snapshot MakeSnapshot() const;
   virtual Snapshot MakeSnapshot(Clock::time_point timestamp) const;
-  virtual double min() const;
   virtual double max() const;
-  virtual double variance() const;
-  virtual double sum() const;
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;

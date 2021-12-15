@@ -31,24 +31,8 @@ std::size_t CKMS::count() const {
     return count_ + buffer_count_;
 }
 
-double CKMS::min() const {
-    return min_;
-}
-
 double CKMS::max() const {
     return max_;
-}
-
-double CKMS::variance() const {
-    auto n = count();
-    if (n > 1) {
-        return variance_s_ / (n - 1.0);
-    }
-    return 0;
-}
-
-double CKMS::sum() const {
-    return sum_;
 }
 
 CKMS::Quantile::Quantile(double quantile, double error)
@@ -65,9 +49,11 @@ CKMS::CKMS(const std::vector<Quantile>& quantiles)
     : quantiles_(quantiles), count_(0), buffer_{}, buffer_count_(0) {}
 
 void CKMS::insert(double value) {
-  // Make sure to call updateHistogramMetrics before updating
-  // buffer_count_
-  updateHistogramMetrics(value);
+  if (count() == 0) {
+      max_ = value;
+  } else {
+      max_ = std::max(max_, value);
+  }
 
   buffer_[buffer_count_] = value;
   ++buffer_count_;
@@ -112,7 +98,7 @@ void CKMS::reset() {
   count_ = 0;
   sample_.clear();
   buffer_count_ = 0;
-  min_ = max_ = sum_ = variance_m_ = variance_s_ = 0;
+  max_ = 0;
 }
 
 double CKMS::allowableError(int rank) {
@@ -175,26 +161,6 @@ bool CKMS::insertBatch() {
 
   buffer_count_ = 0;
   return true;
-}
-
-void CKMS::updateHistogramMetrics(double x) {
-  auto const c = count();
-  if (c == 0) {
-    min_ = max_ = sum_ = x;
-  } else {
-    min_ = std::min(min_, x);
-    max_ = std::max(max_, x);
-    sum_ += x;
-  }
-  double new_count = c + 1;
-  double old_vm = variance_m_;
-  double old_vs = variance_s_;
-  if (new_count > 1) {
-    variance_m_ = old_vm + (x - old_vm) / new_count;
-    variance_s_ = old_vs + (x - old_vm) * (x - variance_m_);
-  } else {
-    variance_m_ = x;
-  }
 }
 
 void CKMS::compress() {

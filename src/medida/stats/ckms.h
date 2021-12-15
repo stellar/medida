@@ -46,16 +46,12 @@ class CKMS {
   double get(double q);
   void reset();
   std::size_t count() const;
-  double sum() const;
-  double min() const;
   double max() const;
-  double variance() const;
 
  private:
   double allowableError(int rank);
   bool insertBatch();
   void compress();
-  void updateHistogramMetrics(double value);
 
  private:
   const std::reference_wrapper<const std::vector<Quantile>> quantiles_;
@@ -65,7 +61,7 @@ class CKMS {
   std::array<double, 500> buffer_;
   std::size_t buffer_count_;
 
-  double min_, max_, sum_, variance_m_, variance_s_;
+  double max_;
 };
 
 } // namespace stats

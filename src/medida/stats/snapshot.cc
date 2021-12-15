@@ -30,10 +30,7 @@ class Snapshot::Impl {
   virtual double get98thPercentile();
   virtual double get99thPercentile();
   virtual double get999thPercentile();
-  virtual double sum() const { return 0; };
-  virtual double min() const { return 0; };
-  virtual double max() const { return 0; };
-  virtual double variance() const { return 0; };
+  virtual double max() = 0;
   virtual std::vector<double> getValues() const = 0;
 };
 
@@ -43,6 +40,7 @@ class Snapshot::VectorImpl : public Snapshot::Impl {
   ~VectorImpl();
   std::size_t size() const override;
   double getValue(double quantile) override;
+  double max() override;
   std::vector<double> getValues() const override;
  private:
   std::vector<double> values_;
@@ -55,10 +53,7 @@ class Snapshot::CKMSImpl : public Snapshot::Impl {
   ~CKMSImpl();
   std::size_t size() const override;
   double getValue(double quantile) override;
-  double sum() const override;
-  double min() const override;
-  double max() const override;
-  double variance() const override;
+  double max() override;
   std::vector<double> getValues() const override;
  private:
   CKMS ckms_;
@@ -93,24 +88,9 @@ std::size_t Snapshot::size() const {
   return impl_->size();
 }
 
-double Snapshot::min() {
-  checkImpl();
-  return impl_->min();
-}
-
 double Snapshot::max() {
   checkImpl();
   return impl_->max();
-}
-
-double Snapshot::variance() {
-  checkImpl();
-  return impl_->variance();
-}
-
-double Snapshot::sum() {
-  checkImpl();
-  return impl_->sum();
 }
 
 std::vector<double> Snapshot::getValues() const {
@@ -176,6 +156,11 @@ Snapshot::VectorImpl::~VectorImpl() {
 
 std::size_t Snapshot::VectorImpl::size() const {
  return values_.size();
+}
+
+
+double Snapshot::VectorImpl::max() {
+  return getValue(1.0);
 }
 
 
@@ -267,20 +252,8 @@ std::vector<double> Snapshot::CKMSImpl::getValues() const {
     throw std::runtime_error("Can't return the values since ckms doesn't have them");
 }
 
-double Snapshot::CKMSImpl::variance() const {
-    return ckms_.variance();
-}
-
-double Snapshot::CKMSImpl::sum() const {
-    return ckms_.sum();
-}
-
-double Snapshot::CKMSImpl::max() const {
+double Snapshot::CKMSImpl::max() {
     return ckms_.max();
-}
-
-double Snapshot::CKMSImpl::min() const {
-    return ckms_.min();
 }
 
 double Snapshot::CKMSImpl::getValue(double quantile) {

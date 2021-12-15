@@ -29,10 +29,7 @@ class Snapshot {
   double get98thPercentile();
   double get99thPercentile();
   double get999thPercentile();
-  double min();
   double max();
-  double sum();
-  double variance();
   std::vector<double> getValues() const;
   class Impl;
   class VectorImpl;
