@@ -27,7 +27,7 @@ class SlidingWindowSample::Impl
     std::uint64_t size();
     void Update(std::int64_t value);
     void Update(std::int64_t value, Clock::time_point timestamp);
-    Snapshot MakeSnapshot(uint64_t divisor = 1);
+    Snapshot MakeSnapshot(uint64_t divisor);
 
   private:
     std::mutex mutex_;
