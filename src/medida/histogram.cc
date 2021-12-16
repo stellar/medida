@@ -11,6 +11,7 @@
 #include "medida/stats/exp_decay_sample.h"
 #include "medida/stats/uniform_sample.h"
 #include "medida/stats/sliding_window_sample.h"
+#include "medida/stats/ckms_sample.h"
 
 namespace medida {
 
@@ -22,9 +23,9 @@ static const std::chrono::seconds kDefaultWindowTime = std::chrono::seconds(5 * 
 
 class Histogram::Impl {
  public:
-  Impl(SampleType sample_type = kSliding);
+  Impl(SampleType sample_type = kCKMS, std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Impl();
-  stats::Snapshot GetSnapshot() const;
+  stats::Snapshot GetSnapshot(uint64_t divisor) const;
   double sum() const;
   double max() const;
   double min() const;
@@ -49,8 +50,8 @@ class Histogram::Impl {
 
 
 
-Histogram::Histogram(SampleType sample_type)
-    : impl_ {new Histogram::Impl {sample_type}} {
+Histogram::Histogram(SampleType sample_type, std::chrono::seconds ckms_window_size)
+    : impl_ {new Histogram::Impl {sample_type, ckms_window_size}} {
 }
 
 
@@ -103,7 +104,12 @@ void Histogram::Update(std::int64_t value) {
 }
 
 stats::Snapshot Histogram::GetSnapshot() const {
-  return impl_->GetSnapshot();
+  // We pass 1 here as dividing metrics by 1 changes nothing!
+  return GetSnapshot(1);
+}
+
+stats::Snapshot Histogram::GetSnapshot(uint64_t divisor) const {
+  return impl_->GetSnapshot(divisor);
 }
 
 double Histogram::variance() const {
@@ -114,7 +120,7 @@ double Histogram::variance() const {
 // === Implementation ===
 
 
-Histogram::Impl::Impl(SampleType sample_type) {
+Histogram::Impl::Impl(SampleType sample_type, std::chrono::seconds ckms_window_size) {
   if (sample_type == kUniform) {
     sample_ = std::unique_ptr<stats::Sample>(new stats::UniformSample(kDefaultSampleSize));
   } else if (sample_type == kBiased) {
@@ -122,6 +128,8 @@ Histogram::Impl::Impl(SampleType sample_type) {
   } else if (sample_type == kSliding) {
     sample_ = std::unique_ptr<stats::Sample>(new stats::SlidingWindowSample(kDefaultSampleSize,
                                                                             kDefaultWindowTime));
+  } else if (sample_type == kCKMS) {
+    sample_ = std::unique_ptr<stats::Sample>(new stats::CKMSSample(ckms_window_size));
   } else {
       throw std::invalid_argument("invalid sample_type");
   }
@@ -203,8 +211,8 @@ double Histogram::Impl::variance() const {
 }
 
 
-stats::Snapshot Histogram::Impl::GetSnapshot() const {
-  return sample_->MakeSnapshot();
+stats::Snapshot Histogram::Impl::GetSnapshot(uint64_t divisor) const {
+  return sample_->MakeSnapshot(divisor);
 }
 
 

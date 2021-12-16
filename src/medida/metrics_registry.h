@@ -23,11 +23,11 @@ namespace medida {
 
 class MetricsRegistry {
  public:
-  MetricsRegistry();
+  MetricsRegistry(std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~MetricsRegistry();
   Counter& NewCounter(const MetricName &name, std::int64_t init_value = 0);
   Histogram& NewHistogram(const MetricName &name,
-      SamplingInterface::SampleType sample_type = SamplingInterface::kSliding);
+      SamplingInterface::SampleType sample_type = SamplingInterface::kCKMS);
   Meter& NewMeter(const MetricName &name, std::string event_type, 
       Clock::duration rate_unit = std::chrono::seconds(1));
   Timer& NewTimer(const MetricName &name,

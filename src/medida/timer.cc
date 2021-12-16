@@ -14,7 +14,8 @@ namespace medida {
 class Timer::Impl {
  public:
   Impl(Timer& self, std::chrono::nanoseconds duration_unit = std::chrono::milliseconds(1),
-      std::chrono::nanoseconds rate_unit = std::chrono::seconds(1));
+      std::chrono::nanoseconds rate_unit = std::chrono::seconds(1),
+      std::chrono::seconds ckms_window_size = std::chrono::seconds(30));
   ~Impl();
   void Process(MetricProcessor& processor);
   std::chrono::nanoseconds rate_unit() const;
@@ -45,8 +46,10 @@ class Timer::Impl {
 };
 
 
-Timer::Timer(std::chrono::nanoseconds duration_unit, std::chrono::nanoseconds rate_unit)
-    : impl_ {new Timer::Impl {*this, duration_unit, rate_unit}} {
+Timer::Timer(std::chrono::nanoseconds duration_unit,
+             std::chrono::nanoseconds rate_unit,
+             std::chrono::seconds ckms_window_size)
+    : impl_ {new Timer::Impl {*this, duration_unit, rate_unit, ckms_window_size}} {
 }
 
 
@@ -153,13 +156,16 @@ void Timer::Time(std::function<void()> func) {
 // === Implementation ===
 
 
-Timer::Impl::Impl(Timer& self, std::chrono::nanoseconds duration_unit, std::chrono::nanoseconds rate_unit) 
+Timer::Impl::Impl(Timer& self,
+                  std::chrono::nanoseconds duration_unit,
+                  std::chrono::nanoseconds rate_unit,
+                  std::chrono::seconds ckms_window_size)
     : self_ (self),
       duration_unit_       {duration_unit},
       duration_unit_nanos_ {duration_unit.count()},
       rate_unit_           {rate_unit},
       meter_               {"calls", rate_unit},
-      histogram_           {SamplingInterface::kSliding} {
+      histogram_           {SamplingInterface::kCKMS, ckms_window_size} {
 }
 
 
@@ -252,13 +258,7 @@ void Timer::Impl::Update(std::chrono::nanoseconds duration) {
 
 
 stats::Snapshot Timer::Impl::GetSnapshot() const {
-  auto values = histogram_.GetSnapshot().getValues();
-  std::vector<double> converted;
-  converted.reserve(values.size());
-  for (auto& v : values) {
-    converted.push_back(v / (double)duration_unit_nanos_);
-  }
-  return {converted};
+  return histogram_.GetSnapshot(duration_unit_nanos_);
 }
 
 

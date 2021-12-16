@@ -5,6 +5,7 @@
 #include "medida/reporting/json_reporter.h"
 
 #include <gtest/gtest.h>
+#include <thread>
 
 #include "medida/metrics_registry.h"
 
@@ -13,7 +14,7 @@ using namespace medida::reporting;
 
 
 TEST(JsonReporterTest, foo) {
-  MetricsRegistry registry {};
+  MetricsRegistry registry {std::chrono::seconds(1)};
   auto& counter = registry.NewCounter({"test", "console_reporter", "counter"});
   auto& histogram = registry.NewHistogram({"test", "console_reporter", "histogram"});
   auto& meter = registry.NewMeter({"test", "console_reporter", "meter"}, "cycles");
@@ -25,6 +26,7 @@ TEST(JsonReporterTest, foo) {
     histogram.Update(i);
     meter.Mark();
   }
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   auto json = reporter.Report();
   std::cerr << json << std::endl;
 }

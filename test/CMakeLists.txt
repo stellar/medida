@@ -12,6 +12,8 @@ set(test_sources
   reporting/test_collectd_reporter.cc
   reporting/test_console_reporter.cc
   reporting/test_json_reporter.cc
+  stats/test_ckms.cc
+  stats/test_ckms_sample.cc
   stats/test_ewma.cc
   stats/test_exp_decay_sample.cc
   stats/test_snapshot.cc

@@ -21,7 +21,7 @@ class UniformSample : public Sample {
   virtual void Clear();
   virtual std::uint64_t size() const;
   virtual void Update(std::int64_t value);
-  virtual Snapshot MakeSnapshot() const;
+  virtual Snapshot MakeSnapshot(uint64_t divisor = 1) const;
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;

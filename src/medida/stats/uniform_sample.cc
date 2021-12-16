@@ -20,7 +20,7 @@ class UniformSample::Impl {
   void Clear();
   std::uint64_t size() const;
   void Update(std::int64_t value);
-  Snapshot MakeSnapshot() const;
+  Snapshot MakeSnapshot(uint64_t divisor) const;
  private:
   std::atomic<std::uint64_t> count_;
   std::vector<std::int64_t> values_;
@@ -53,8 +53,8 @@ void UniformSample::Update(std::int64_t value) {
 }
 
 
-Snapshot UniformSample::MakeSnapshot() const {
-  return impl_->MakeSnapshot();
+Snapshot UniformSample::MakeSnapshot(uint64_t divisor) const {
+  return impl_->MakeSnapshot(divisor);
 }
 
 
@@ -106,12 +106,12 @@ void UniformSample::Impl::Update(std::int64_t value) {
 }
 
 
-Snapshot UniformSample::Impl::MakeSnapshot() const {
+Snapshot UniformSample::Impl::MakeSnapshot(uint64_t divisor) const {
   std::uint64_t size = values_.size();
   std::uint64_t count = count_.load();
   std::lock_guard<std::mutex> lock {mutex_};
   auto begin = std::begin(values_);
-  return Snapshot {{begin, begin + std::min(count, size)}};
+  return Snapshot {{begin, begin + std::min(count, size)}, divisor};
 }
 
 
