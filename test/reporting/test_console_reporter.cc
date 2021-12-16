@@ -15,7 +15,7 @@ using namespace medida::reporting;
 
 
 TEST(ConsoleReporterTest, foo) {
-  MetricsRegistry registry {};
+  MetricsRegistry registry {std::chrono::seconds(1)};
   auto& counter = registry.NewCounter({"test", "console_reporter", "counter"});
   auto& histogram = registry.NewHistogram({"test", "console_reporter", "histogram"});
   auto& meter = registry.NewMeter({"test", "console_reporter", "meter"}, "cycles");
@@ -27,6 +27,7 @@ TEST(ConsoleReporterTest, foo) {
     histogram.Update(i);
     meter.Mark();
   }
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   reporter.Start(std::chrono::milliseconds(300));
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
 }
