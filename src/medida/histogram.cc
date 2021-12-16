@@ -103,6 +103,11 @@ void Histogram::Update(std::int64_t value) {
   impl_->Update(value);
 }
 
+stats::Snapshot Histogram::GetSnapshot() const {
+  // We pass 1 here as dividing metrics by 1 changes nothing!
+  return GetSnapshot(1);
+}
+
 stats::Snapshot Histogram::GetSnapshot(uint64_t divisor) const {
   return impl_->GetSnapshot(divisor);
 }
@@ -206,7 +211,7 @@ double Histogram::Impl::variance() const {
 }
 
 
-stats::Snapshot Histogram::Impl::GetSnapshot(uint64_t divisor = 1) const {
+stats::Snapshot Histogram::Impl::GetSnapshot(uint64_t divisor) const {
   return sample_->MakeSnapshot(divisor);
 }
 

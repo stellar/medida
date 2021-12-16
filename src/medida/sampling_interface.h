@@ -13,7 +13,7 @@ class SamplingInterface {
 public:
   enum SampleType { kUniform, kBiased, kSliding, kCKMS };
   virtual ~SamplingInterface() {};
-  virtual stats::Snapshot GetSnapshot(uint64_t divisor = 1) const = 0;
+  virtual stats::Snapshot GetSnapshot() const = 0;
 };
 
 } // namespace medida

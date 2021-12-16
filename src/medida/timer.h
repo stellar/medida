@@ -33,7 +33,7 @@ class Timer : public MetricInterface, MeteredInterface, SamplingInterface, Summa
   virtual double five_minute_rate();
   virtual double one_minute_rate();
   virtual double mean_rate();
-  virtual stats::Snapshot GetSnapshot(uint64_t divisor = 1) const;
+  virtual stats::Snapshot GetSnapshot() const;
   virtual double max() const;
   virtual double min() const;
   virtual double mean() const;
