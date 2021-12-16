@@ -202,7 +202,7 @@ void JsonReporter::Impl::Process(Histogram& histogram) {
        << "\"95%\":" << snapshot.get95thPercentile() << "," << std::endl
        << "\"98%\":" << snapshot.get98thPercentile() << "," << std::endl
        << "\"99%\":" << snapshot.get99thPercentile() << "," << std::endl
-       << "\"99.9%\":" << snapshot.get999thPercentile() << std::endl
+       << "\"99.9%\":" << snapshot.get999thPercentile() << "," << std::endl
        << "\"100%\":" << snapshot.max() << std::endl;
 }
 
@@ -230,7 +230,7 @@ void JsonReporter::Impl::Process(Timer& timer) {
        << "\"95%\":" << snapshot.get95thPercentile() << "," << std::endl
        << "\"98%\":" << snapshot.get98thPercentile() << "," << std::endl
        << "\"99%\":" << snapshot.get99thPercentile() << "," << std::endl
-       << "\"99.9%\":" << snapshot.get999thPercentile() << std::endl
+       << "\"99.9%\":" << snapshot.get999thPercentile() << "," << std::endl
        << "\"100%\":" << snapshot.max() << std::endl;
 }
 
