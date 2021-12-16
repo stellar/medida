@@ -115,7 +115,7 @@ Meter& MetricsRegistry::Impl::NewMeter(const MetricName &name, std::string event
 
 Timer& MetricsRegistry::Impl::NewTimer(const MetricName &name, std::chrono::nanoseconds duration_unit,
     std::chrono::nanoseconds rate_unit) {
-  return NewMetric<Timer>(name, duration_unit, rate_unit);
+  return NewMetric<Timer>(name, duration_unit, rate_unit, ckms_window_size_);
 }
 
 Buckets& MetricsRegistry::Impl::NewBuckets(
