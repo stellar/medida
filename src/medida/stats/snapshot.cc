@@ -22,6 +22,7 @@ static const double kP999_Q = 0.999;
 
 class Snapshot::Impl {
  public:
+  virtual ~Impl();
   virtual std::size_t size() const = 0;
   virtual double getValue(double quantile) const = 0;
   virtual double getMedian() const;
@@ -33,6 +34,8 @@ class Snapshot::Impl {
   virtual double max() const = 0;
   virtual std::vector<double> getValues() const = 0;
 };
+
+Snapshot::Impl::~Impl() {}
 
 class Snapshot::VectorImpl : public Snapshot::Impl {
  public:
