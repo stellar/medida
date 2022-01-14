@@ -9,7 +9,8 @@
 
 namespace medida {
 
-  typedef std::chrono::high_resolution_clock Clock;
+  using Clock = std::chrono::steady_clock;
+  using SystemClock = std::chrono::system_clock;
 
 } // namespace medida
 
