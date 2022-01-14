@@ -7,7 +7,7 @@ using namespace medida::stats;
 TEST(CKMSSampleTest, aSameValueEverySecond) {
   CKMSSample sample;
 
-  auto t = medida::Clock::now();
+  auto t = medida::SystemClock::now();
   for (auto i = 0; i < 300; i++) {
     t += std::chrono::seconds(1);
     sample.Update(100, t);
@@ -25,7 +25,7 @@ TEST(CKMSSampleTest, aSameValueEverySecond) {
 TEST(CKMSSampleTest, aThreeDifferentValues) {
   CKMSSample sample;
 
-  auto t = medida::Clock::now();
+  auto t = medida::SystemClock::now();
   for (auto i = 0; i < 300; i++) {
     t += std::chrono::seconds(1);
     sample.Update(i % 3, t);
