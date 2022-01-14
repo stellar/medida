@@ -46,7 +46,7 @@ CKMS::Item::Item(double value, int lower_delta, int delta)
 
 
 CKMS::CKMS(const std::vector<Quantile>& quantiles)
-    : quantiles_(quantiles), count_(0), buffer_{}, buffer_count_(0) {}
+    : quantiles_(quantiles), count_(0), buffer_{}, buffer_count_(0), size_when_last_sorted_(0) {}
 
 void CKMS::insert(double value) {
   if (count() == 0) {
@@ -65,6 +65,34 @@ void CKMS::insert(double value) {
 }
 
 double CKMS::get(double q) {
+  if (count() < buffer_.size()) {
+      // The sample size is still very small.
+      // We will calculate the exact value.
+      if (size_when_last_sorted_ < count()) {
+          // We've added more elements since we last sorted.
+          // We need to sort again.
+          // This means, in total, we may sort this array buffer_count_ times.
+          // Therefore, in the worst case scenario,
+          // sorting will cost us O(buffer_count_ * buffer_count_ * log(buffer_count_)) operations.
+          std::sort(buffer_.begin(), buffer_.begin() + buffer_count_);
+          size_when_last_sorted_ = count();
+      }
+      if (q <= 0 || 1.0 < q) {
+          // Invalid q.
+          return 0;
+      } else {
+          // We want to find x such that
+          // x is the smallest number in the given sample set such that
+          // at least q% of all samples are <= x.
+          // In other words, we want ceil(buffer_count_ * q) elements
+          // to be <= x.
+          // Then we want ceil(buffer_count_ * q)-th element,
+          // whose index is ceil(buffer_count_ * q) - 1 since
+          // the index starts at 0.
+          return buffer_[int(ceil(buffer_count_ * q)) - 1];
+      }
+  }
+
   insertBatch();
   compress();
 
@@ -99,6 +127,7 @@ void CKMS::reset() {
   sample_.clear();
   buffer_count_ = 0;
   max_ = 0;
+  size_when_last_sorted_ = 0;
 }
 
 double CKMS::allowableError(int rank) {

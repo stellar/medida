@@ -60,6 +60,7 @@ class CKMS {
   std::vector<Item> sample_;
   std::array<double, 500> buffer_;
   std::size_t buffer_count_;
+  std::size_t size_when_last_sorted_;
 
   double max_;
 };
