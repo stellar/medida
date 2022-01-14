@@ -65,6 +65,10 @@ void CKMS::insert(double value) {
 }
 
 double CKMS::get(double q) {
+  if (count() == 0) {
+      return 0;
+  }
+
   if (count() < buffer_.size()) {
       // The sample size is still very small.
       // We will calculate the exact value.
