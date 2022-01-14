@@ -66,20 +66,26 @@ void CKMS::insert(double value) {
 
 double CKMS::get(double q) {
   if (count() < buffer_.size()) {
+      // in this block, count() == buffer_count_ as we've accumulated less
+      // than buffer_.size() samples
+      if (buffer_count_ == 0)
+      {
+          return 0.0;
+      }
       // The sample size is still very small.
       // We will calculate the exact value.
-      if (size_when_last_sorted_ < count()) {
+      if (size_when_last_sorted_ < buffer_count_) {
           // We've added more elements since we last sorted.
           // We need to sort again.
           // This means, in total, we may sort this array buffer_count_ times.
           // Therefore, in the worst case scenario,
           // sorting will cost us O(buffer_count_ * buffer_count_ * log(buffer_count_)) operations.
           std::sort(buffer_.begin(), buffer_.begin() + buffer_count_);
-          size_when_last_sorted_ = count();
+          size_when_last_sorted_ = buffer_count_;
       }
       if (q <= 0 || 1.0 < q) {
           // Invalid q.
-          return 0;
+          return 0.0;
       } else {
           // We want to find x such that
           // x is the smallest number in the given sample set such that
