@@ -16,6 +16,76 @@ TEST(CKMSTest, aCKMSAddHundredOnes) {
   EXPECT_NEAR(1, ckms.get(1), 1e-6);
 }
 
+TEST(CKMSTest, aCKMSSmallSampleSizes) {
+  std::vector<int> sizes({3, 10});
+  std::vector<double> percentiles({0.5, 0.75, 0.99, 0.999});
+  for (auto const size : sizes) {
+      {
+        // Add {1, 2, ..., size}
+        std::vector<CKMS::Quantile> v({{0.5, 0.001}, {0.99, 0.001}, {1, 0}});
+        auto ckms = CKMS(v);
+        for (int i = 1; i <= size; i++) {
+            ckms.insert(i);
+        }
+        for (auto const percentile : percentiles) {
+            // x is the q-th percentile if and only if
+            // x is the smallest number such that at least q% of all samples are <= x.
+            // In this case, the sample is {1, 2, ..., size}, so it's easy to calculate.
+            auto want = ceil(size * percentile);
+            EXPECT_NEAR(want, ckms.get(percentile), 1e-6);
+        }
+      }
+      {
+        // Add {size, size - 1, ..., 1}
+        std::vector<CKMS::Quantile> v({{0.5, 0.001}, {0.99, 0.001}, {1, 0}});
+        auto ckms = CKMS(v);
+        for (int i = size; i >= 1; i--) {
+            ckms.insert(i);
+        }
+        for (auto const percentile : percentiles) {
+            // x is the q-th percentile if and only if
+            // x is the smallest number such that at least q% of all samples are <= x.
+            // In this case, the sample is {1, 2, ..., size}, so it's easy to calculate.
+            auto want = ceil(size * percentile);
+            EXPECT_NEAR(want, ckms.get(percentile), 1e-6);
+        }
+      }
+  }
+}
+
+TEST(CKMSTest, aCKMSExactToApprox) {
+  std::vector<double> percentiles({0.5, 0.75, 0.99, 0.999});
+  // Make sure that CKMS returns the correct result when size = 499.
+  // This is because CKMS is supposed to hold up to 499 elements
+  // and sort when reporting.
+  const int size = 499;
+  std::vector<CKMS::Quantile> v({{0.5, 0.001}, {0.99, 0.001}, {1, 0}});
+  auto ckms = CKMS(v);
+  for (int i = 1; i <= size; i++) {
+      ckms.insert(i);
+  }
+  for (auto const percentile : percentiles) {
+      // x is the q-th percentile if and only if
+      // x is the smallest number such that at least q% of all samples are <= x.
+      // In this case, the sample is {1, 2, ..., size}, so it's easy to calculate.
+      auto want = ceil(size * percentile);
+      EXPECT_NEAR(want, ckms.get(percentile), 1e-6);
+  }
+
+  // Now we'll insert the 500th element.
+  // CKMS switches to an approximation as the buffer is now full.
+  ckms.insert(500);
+  for (auto const percentile : percentiles) {
+      auto want = ceil(500 * percentile);
+      // When there are 500 elements,
+      // the absolute difference of 2 is 0.4%.
+      // e.g., Instead of P99.9, CKMS might report
+      // P99.5 which is really close.
+      EXPECT_NEAR(want, ckms.get(percentile), 2);
+  }
+}
+
+
 TEST(CKMSTest, aCKMSAddOneToHundredThounsand) {
   // 0.1% error
   //
