@@ -125,3 +125,28 @@ TEST(CKMSSampleTest, aCKMSUpdateWithHugeGap) {
   auto snapshot = sample.MakeSnapshot(t);
   EXPECT_EQ(2, snapshot.size());
 }
+
+TEST(CKMSSampleTest, aSpikyInputs) {
+  CKMSSample sample;
+
+  auto t = medida::Clock::now();
+
+  auto const size = 100000;
+  for (auto i = 0; i < 5; i++) {
+    t += std::chrono::seconds(30);
+    for (int j = 1; j <= size; j++) {
+      sample.Update(j, t);
+    }
+  }
+
+  EXPECT_EQ(size, sample.size(t));
+
+  auto snapshot = sample.MakeSnapshot(t);
+
+  // Allow the result to be off by 0.1%.
+  auto error = 0.001;
+  EXPECT_NEAR(size * 0.5, snapshot.getValue(0.5), size * error);
+  EXPECT_NEAR(size * 0.99, snapshot.getValue(0.99), size * error);
+  EXPECT_NEAR(size, snapshot.getValue(1), size * error);
+}
+
