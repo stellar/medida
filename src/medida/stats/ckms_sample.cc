@@ -77,7 +77,8 @@ Snapshot CKMSSample::MakeSnapshot(SystemClock::time_point timestamp, uint64_t di
 // === Implementation ===
 
 SystemClock::time_point CKMSSample::Impl::CalculateCurrentWindowStartingPoint(SystemClock::time_point time) const {
-    return time - (std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()) % window_size_);
+    auto offset = time.time_since_epoch() % std::chrono::duration_cast<SystemClock::time_point::duration>(window_size_);
+    return time - offset;
 }
 
 bool CKMSSample::Impl::IsInCurrentWindow(SystemClock::time_point const& timestamp) const {
