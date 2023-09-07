@@ -7,6 +7,7 @@
 #include <cmath>
 #include <mutex>
 #include <algorithm>
+#include <stdexcept>
 
 #include "medida/stats/exp_decay_sample.h"
 #include "medida/stats/uniform_sample.h"
