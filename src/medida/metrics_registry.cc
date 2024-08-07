@@ -140,6 +140,7 @@ MetricType& MetricsRegistry::Impl::NewMetric(const MetricName& name, Args... arg
 }
 
 std::map<MetricName, std::shared_ptr<MetricInterface>> MetricsRegistry::Impl::GetAllMetrics() const {
+ std::lock_guard<std::mutex> lock {mutex_};
  return {metrics_}; 
 }
 
