@@ -46,7 +46,7 @@ class Histogram::Impl {
   std::uint64_t count_;
   double variance_m_;
   double variance_s_;
-  mutable std::mutex mutex_;
+  mutable std::recursive_mutex mutex_;
 };
 
 
@@ -143,6 +143,7 @@ Histogram::Impl::~Impl() {
 
 
 void Histogram::Impl::Clear() {
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   min_ = 0;
   max_ = 0;
   sum_ = 0;
@@ -154,19 +155,19 @@ void Histogram::Impl::Clear() {
 
 
 std::uint64_t Histogram::Impl::count() const {
-  std::lock_guard<std::mutex> lock {mutex_};
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   return count_;
 }
 
 
 double Histogram::Impl::sum() const {
-  std::lock_guard<std::mutex> lock {mutex_};
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   return sum_;
 }
 
 
 double Histogram::Impl::max() const {
-  std::lock_guard<std::mutex> lock {mutex_};
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   if (count_ > 0) {
     return max_;
   }
@@ -175,7 +176,7 @@ double Histogram::Impl::max() const {
 
 
 double Histogram::Impl::min() const {
-  std::lock_guard<std::mutex> lock {mutex_};
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   if (count_ > 0) {
     return min_;
   }
@@ -184,7 +185,7 @@ double Histogram::Impl::min() const {
 
 
 double Histogram::Impl::mean() const {
-  std::lock_guard<std::mutex> lock {mutex_};
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   if (count_ > 0) {
     return sum_ / (double)count_;
   }
@@ -193,8 +194,8 @@ double Histogram::Impl::mean() const {
 
 
 double Histogram::Impl::std_dev() const {
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   double var = variance();
-  std::lock_guard<std::mutex> lock {mutex_};
   if (count_ > 0) {
     return std::sqrt(var);
   }
@@ -203,9 +204,9 @@ double Histogram::Impl::std_dev() const {
 
 
 double Histogram::Impl::variance() const {
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   auto c = count();
   if (c > 1) {
-    std::lock_guard<std::mutex> lock {mutex_};
     return variance_s_ / (c - 1.0);
   }
   return 0.0;
@@ -213,13 +214,14 @@ double Histogram::Impl::variance() const {
 
 
 stats::Snapshot Histogram::Impl::GetSnapshot(uint64_t divisor) const {
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   return sample_->MakeSnapshot(divisor);
 }
 
 
 void Histogram::Impl::Update(std::int64_t value) {
+  std::lock_guard<std::recursive_mutex> lock {mutex_};
   sample_->Update(value);
-  std::lock_guard<std::mutex> lock {mutex_};
   double dval = (double)value;
   if (count_ > 0) {
     max_ = std::max(max_, dval);
