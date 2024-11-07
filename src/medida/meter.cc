@@ -34,6 +34,7 @@ class Meter::Impl {
   stats::EWMA m1_rate_;
   stats::EWMA m5_rate_;
   stats::EWMA m15_rate_;
+  mutable std::mutex mutex_;
   void Tick();
   void TickIfNecessary();
 };
@@ -117,11 +118,17 @@ Meter::Impl::~Impl() {
 
 
 std::chrono::nanoseconds Meter::Impl::rate_unit() const {
+  // Mutex isn't strictly needed (rate_unit_ is a const),
+  // but add here to avoid warnings
+  std::lock_guard<std::mutex> lock {mutex_};
   return rate_unit_;
 }
 
 
 std::string Meter::Impl::event_type() const {
+  // Mutex isn't strictly needed (event_type_ is a const),
+  // but add here to avoid warnings
+  std::lock_guard<std::mutex> lock {mutex_};
   return event_type_;
 }
 
@@ -132,24 +139,28 @@ std::uint64_t Meter::Impl::count() const {
 
 
 double Meter::Impl::fifteen_minute_rate() {
+  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
   return m15_rate_.getRate();
 }
 
 
 double Meter::Impl::five_minute_rate() {
+  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
   return m5_rate_.getRate();
 }
 
 
 double Meter::Impl::one_minute_rate() {
+  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
   return m1_rate_.getRate();
 }
 
 
 double Meter::Impl::mean_rate() {
+  std::lock_guard<std::mutex> lock {mutex_};
   double c = count_.load();
   if (c > 0) {
     std::chrono::nanoseconds elapsed = Clock::now() - start_time_;
@@ -160,6 +171,7 @@ double Meter::Impl::mean_rate() {
 
 
 void Meter::Impl::Mark(std::uint64_t n) {
+  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
   count_ += n;
   m1_rate_.update(n);
@@ -169,6 +181,7 @@ void Meter::Impl::Mark(std::uint64_t n) {
 
 void Meter::Impl::Clear()
 {
+  std::lock_guard<std::mutex> lock {mutex_};
   count_ = 0;
   start_time_ = Clock::now();
   last_tick_ = std::chrono::duration_cast<std::chrono::nanoseconds>(start_time_.time_since_epoch()).count();
@@ -185,6 +198,7 @@ void Meter::Impl::Tick() {
 
 
 void Meter::Impl::TickIfNecessary() {
+  // Only used internally, callers must ensure proper synchronization
   auto old_tick = last_tick_.load();
   auto new_tick = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now().time_since_epoch()).count();
   auto age = new_tick - old_tick;
