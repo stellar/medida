@@ -4,7 +4,7 @@
 
 #include "medida/buckets.h"
 #include "medida/timer.h"
-
+#include <Tracy.hpp>
 #include <map>
 #include <memory>
 
@@ -67,39 +67,46 @@ Buckets::Buckets(
                  std::chrono::nanoseconds rate_unit)
     : impl_(new Buckets::Impl(boundaries, duration_unit, rate_unit))
 {
+    ZoneScoped;
 }
 
 Buckets::~Buckets()
 {
+    ZoneScoped;
 }
 
 void
 Buckets::Process(MetricProcessor& processor)
 {
+    ZoneScoped;
     processor.Process(*this);
 }
 
 std::map<double, std::shared_ptr<Timer>> const&
 Buckets::getBuckets()
 {
+    ZoneScoped;
     return impl_->getBuckets();
 }
 
 std::chrono::nanoseconds
 Buckets::boundary_unit() const
 {
+    ZoneScoped;
     return impl_->boundary_unit();
 }
 
 void
 Buckets::Update(std::chrono::nanoseconds value)
 {
+    ZoneScoped;
     impl_->Update(value);
 }
 
 void
 Buckets::Clear()
 {
+    ZoneScoped;
     impl_->Clear();
 }
 

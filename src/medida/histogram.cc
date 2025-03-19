@@ -3,6 +3,7 @@
 //
 
 #include "medida/histogram.h"
+#include <Tracy.hpp>
 
 #include <cmath>
 #include <mutex>
@@ -53,68 +54,82 @@ class Histogram::Impl {
 
 Histogram::Histogram(SampleType sample_type, std::chrono::seconds ckms_window_size)
     : impl_ {new Histogram::Impl {sample_type, ckms_window_size}} {
+    ZoneScoped;
 }
 
 
 Histogram::~Histogram() {
+    ZoneScoped;
 }
 
 
 void Histogram::Process(MetricProcessor& processor) {
-  processor.Process(*this);  // FIXME: pimpl?
+    ZoneScoped;
+    processor.Process(*this); // FIXME: pimpl?
 }
 
 
 void Histogram::Clear() {
-  impl_->Clear();
+    ZoneScoped;
+    impl_->Clear();
 }
 
 
 std::uint64_t Histogram::count() const {
-  return impl_->count();
+    ZoneScoped;
+    return impl_->count();
 }
 
 
 double Histogram::sum() const {
-  return impl_->sum();
+    ZoneScoped;
+    return impl_->sum();
 }
 
 
 double Histogram::max() const {
-  return impl_->max();
+    ZoneScoped;
+    return impl_->max();
 }
 
 
 double Histogram::min() const {
-  return impl_->min();
+    ZoneScoped;
+    return impl_->min();
 }
 
 
 double Histogram::mean() const {
-  return impl_->mean();
+    ZoneScoped;
+    return impl_->mean();
 }
 
 
 double Histogram::std_dev() const {
-  return impl_->std_dev();
+    ZoneScoped;
+    return impl_->std_dev();
 }
 
 
 void Histogram::Update(std::int64_t value) {
-  impl_->Update(value);
+    ZoneScoped;
+    impl_->Update(value);
 }
 
 stats::Snapshot Histogram::GetSnapshot() const {
-  // We pass 1 here as dividing metrics by 1 changes nothing!
-  return GetSnapshot(1);
+    ZoneScoped;
+    // We pass 1 here as dividing metrics by 1 changes nothing!
+    return GetSnapshot(1);
 }
 
 stats::Snapshot Histogram::GetSnapshot(uint64_t divisor) const {
-  return impl_->GetSnapshot(divisor);
+    ZoneScoped;
+    return impl_->GetSnapshot(divisor);
 }
 
 double Histogram::variance() const {
-  return impl_->variance();
+    ZoneScoped;
+    return impl_->variance();
 }
 
 

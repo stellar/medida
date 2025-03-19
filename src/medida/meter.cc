@@ -3,6 +3,7 @@
 //
 
 #include "medida/meter.h"
+#include <Tracy.hpp>
 
 #include <atomic>
 #include <mutex>
@@ -41,59 +42,71 @@ class Meter::Impl {
 
 Meter::Meter(std::string event_type, std::chrono::nanoseconds rate_unit)
     : impl_ {new Meter::Impl {event_type, rate_unit}} {
+    ZoneScoped;
 }
 
 
 Meter::~Meter() {
+    ZoneScoped;
 }
 
 
 std::chrono::nanoseconds Meter::rate_unit() const {
-  return impl_->rate_unit();
+    ZoneScoped;
+    return impl_->rate_unit();
 }
 
 
 std::string Meter::event_type() const {
-  return impl_->event_type();
+    ZoneScoped;
+    return impl_->event_type();
 }
 
 
 std::uint64_t Meter::count() const {
-  return impl_->count();
+    ZoneScoped;
+    return impl_->count();
 }
 
 
 double Meter::fifteen_minute_rate() {
-  return impl_->fifteen_minute_rate();
+    ZoneScoped;
+    return impl_->fifteen_minute_rate();
 }
 
 
 double Meter::five_minute_rate() {
-  return impl_->five_minute_rate();
+    ZoneScoped;
+    return impl_->five_minute_rate();
 }
 
 
 double Meter::one_minute_rate() {
-  return impl_->one_minute_rate();
+    ZoneScoped;
+    return impl_->one_minute_rate();
 }
 
 
 double Meter::mean_rate() {
-  return impl_->mean_rate();
+    ZoneScoped;
+    return impl_->mean_rate();
 }
 
 
 void Meter::Mark(std::uint64_t n) {
-  impl_->Mark(n);
+    ZoneScoped;
+    impl_->Mark(n);
 }
 
 void Meter::Clear()
 {
-  impl_->Clear();
+    ZoneScoped;
+    impl_->Clear();
 }
 
 void Meter::Process(MetricProcessor& processor) {
-  processor.Process(*this);  // FIXME: pimpl?
+    ZoneScoped;
+    processor.Process(*this); // FIXME: pimpl?
 }
 
 
