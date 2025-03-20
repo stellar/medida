@@ -237,23 +237,26 @@ void JsonReporter::Impl::Process(Timer& timer) {
 void
 JsonReporter::Impl::Process(Buckets& buckets)
 {
-    auto& bucketData = buckets.getBuckets();
     auto boundary_unit = FormatRateUnit(buckets.boundary_unit());
 
     out_ << "\"type\":\"buckets\"," << std::endl
          << "\"boundary_unit\":\"" << boundary_unit << "\"," << std::endl
          << "\"buckets\": [" << std::endl;
-    for (auto it =bucketData.begin(); it != bucketData.end(); ++it)
+
+    bool begin = true;
+    auto processor = [&](std::pair<double, std::shared_ptr<Timer>> b) mutable
     {
-        auto&b = *it;
-        if (it != bucketData.begin())
-        {
-            out_ << ",";
-        }
-        out_ << "{\n\"boundary\": " << b.first << "," << std::endl;
-        b.second->Process(self_);
-        out_ << "}" << std::endl;
-    }
+      if (!begin)
+      {
+          out_ << ",";
+      }
+      out_ << "{\n\"boundary\": " << b.first << "," << std::endl;
+      b.second->Process(self_);
+      out_ << "}" << std::endl;
+      begin = false;
+    };
+    buckets.forBuckets(processor);
+
     out_ << "]" << std::endl;
 }
 
