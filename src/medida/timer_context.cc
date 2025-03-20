@@ -2,6 +2,7 @@
 // Copyright (c) 2012 Daniel Lundin
 //
 
+#include <Tracy.hpp>
 #include <stdexcept>
 
 #include "medida/timer_context.h"
@@ -26,33 +27,39 @@ class TimerContext::Impl {
 
 TimerContext::TimerContext(TimerContext&& timer)
     : impl_ {std::move(timer.impl_)} {
+    ZoneScoped;
 }
 
 TimerContext::TimerContext(Timer& timer)
     : impl_ {new TimerContext::Impl {timer}} {
+    ZoneScoped;
 }
 
 
 TimerContext::~TimerContext() {
+    ZoneScoped;
 }
 
 void TimerContext::checkImpl() const
 {
-  if (!impl_)
-  {
-    throw std::runtime_error("Access to moved TimerContext::impl_");
-  }
+    ZoneScoped;
+    if (!impl_)
+    {
+        throw std::runtime_error("Access to moved TimerContext::impl_");
+    }
 }
 
 void TimerContext::Reset() {
-  checkImpl();
-  impl_->Reset();
+    ZoneScoped;
+    checkImpl();
+    impl_->Reset();
 }
 
 
 std::chrono::nanoseconds TimerContext::Stop() {
-  checkImpl();
-  return impl_->Stop();
+    ZoneScoped;
+    checkImpl();
+    return impl_->Stop();
 }
 
 
@@ -61,28 +68,33 @@ std::chrono::nanoseconds TimerContext::Stop() {
 
 TimerContext::Impl::Impl(Timer& timer) 
     : timer_ (timer) {  // FIXME: GCC Bug 50025 - Uniform initialization of reference members broken
-  Reset();
+    ZoneScoped;
+    Reset();
 }
 
 
 TimerContext::Impl::~Impl() {
-  Stop();
+    ZoneScoped;
+    Stop();
 }
 
 
 void TimerContext::Impl::Reset() {
-  start_time_ = Clock::now();
-  active_ = true;
+    ZoneScoped;
+    start_time_ = Clock::now();
+    active_ = true;
 }
 
 
 std::chrono::nanoseconds TimerContext::Impl::Stop() {
-  if (active_) {
-    auto dur = Clock::now() - start_time_;
-    timer_.Update(dur);
-    active_ = false;
-    return dur;
-  }
+    ZoneScoped;
+    if (active_)
+    {
+        auto dur = Clock::now() - start_time_;
+        timer_.Update(dur);
+        active_ = false;
+        return dur;
+    }
   return std::chrono::nanoseconds(0);
 }
 

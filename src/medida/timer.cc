@@ -3,6 +3,7 @@
 //
 
 #include "medida/timer.h"
+#include <Tracy.hpp>
 
 #include "medida/histogram.h"
 #include "medida/meter.h"
@@ -50,106 +51,127 @@ Timer::Timer(std::chrono::nanoseconds duration_unit,
              std::chrono::nanoseconds rate_unit,
              std::chrono::seconds ckms_window_size)
     : impl_ {new Timer::Impl {*this, duration_unit, rate_unit, ckms_window_size}} {
+    ZoneScoped;
 }
 
 
 Timer::~Timer() {
+    ZoneScoped;
 }
 
 
 std::chrono::nanoseconds Timer::duration_unit() const {
-  return impl_->duration_unit();
+    ZoneScoped;
+    return impl_->duration_unit();
 }
 
 
 std::chrono::nanoseconds Timer::rate_unit() const {
-  return impl_->rate_unit();
+    ZoneScoped;
+    return impl_->rate_unit();
 }
 
 
 std::uint64_t Timer::count() const {
-  return impl_->count();
+    ZoneScoped;
+    return impl_->count();
 }
 
 
 double Timer::min() const {
-  return impl_->min();
+    ZoneScoped;
+    return impl_->min();
 }
 
 
 double Timer::max() const {
-  return impl_->max();
+    ZoneScoped;
+    return impl_->max();
 }
 
 
 double Timer::mean() const {
-  return impl_->mean();
+    ZoneScoped;
+    return impl_->mean();
 }
 
 
 double Timer::std_dev() const {
-  return impl_->std_dev();
+    ZoneScoped;
+    return impl_->std_dev();
 }
 
 
 double Timer::sum() const {
-  return impl_->sum();
+    ZoneScoped;
+    return impl_->sum();
 }
 
 
 std::string Timer::event_type() const {
-  return impl_->event_type();
+    ZoneScoped;
+    return impl_->event_type();
 }
 
 
 double Timer::fifteen_minute_rate() {
-  return impl_->fifteen_minute_rate();
+    ZoneScoped;
+    return impl_->fifteen_minute_rate();
 }
 
 
 double Timer::five_minute_rate() {
-  return impl_->five_minute_rate();
+    ZoneScoped;
+    return impl_->five_minute_rate();
 }
 
 
 double Timer::one_minute_rate() {
-  return impl_->one_minute_rate();
+    ZoneScoped;
+    return impl_->one_minute_rate();
 }
 
 
 double Timer::mean_rate() {
-  return impl_->mean_rate();
+    ZoneScoped;
+    return impl_->mean_rate();
 }
 
 
 void Timer::Process(MetricProcessor& processor) {
-  return impl_->Process(processor);
-  processor.Process(*this);  // FIXME: pimpl?
+    ZoneScoped;
+    return impl_->Process(processor);
+    processor.Process(*this); // FIXME: pimpl?
 }
 
 
 void Timer::Clear() {
-  impl_->Clear();
+    ZoneScoped;
+    impl_->Clear();
 }
 
 
 void Timer::Update(std::chrono::nanoseconds duration) {
-  impl_->Update(duration);
+    ZoneScoped;
+    impl_->Update(duration);
 }
 
 
 stats::Snapshot Timer::GetSnapshot() const {
-  return impl_->GetSnapshot();
+    ZoneScoped;
+    return impl_->GetSnapshot();
 }
 
 
 TimerContext Timer::TimeScope() {
-  return impl_->TimeScope();
+    ZoneScoped;
+    return impl_->TimeScope();
 }
 
 
 void Timer::Time(std::function<void()> func) {
-  impl_->Time(func);
+    ZoneScoped;
+    impl_->Time(func);
 }
 
 

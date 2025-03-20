@@ -3,6 +3,7 @@
 //
 
 #include "medida/counter.h"
+#include <Tracy.hpp>
 
 #include <atomic>
 
@@ -25,40 +26,48 @@ class Counter::Impl {
 
 Counter::Counter(std::int64_t init)
     : impl_ {new Counter::Impl {init}} {
+    ZoneScoped;
 }
 
 
 Counter::~Counter() {
+    ZoneScoped;
 }
 
 
 void Counter::Process(MetricProcessor& processor)  {
-  processor.Process(*this);  // FIXME: pimpl?
+    ZoneScoped;
+    processor.Process(*this); // FIXME: pimpl?
 }
 
 
 std::int64_t Counter::count() const {
-  return impl_->count();
+    ZoneScoped;
+    return impl_->count();
 }
 
 
 void Counter::set_count(std::int64_t n) {
-  return impl_->set_count(n);
+    ZoneScoped;
+    return impl_->set_count(n);
 }
 
 
 void Counter::inc(std::int64_t n) {
-  impl_->inc(n);
+    ZoneScoped;
+    impl_->inc(n);
 }
 
 
 void Counter::dec(std::int64_t n) {
-  impl_->dec(n);
+    ZoneScoped;
+    impl_->dec(n);
 }
 
 
 void Counter::clear() {
-  impl_->clear();
+    ZoneScoped;
+    impl_->clear();
 }
 
 
