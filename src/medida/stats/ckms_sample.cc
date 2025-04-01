@@ -124,8 +124,8 @@ bool CKMSSample::Impl::AdvanceWindows(SystemClock::time_point timestamp) {
 }
 
 CKMSSample::Impl::Impl(std::chrono::seconds window_size) :
-    prev_window_(std::make_shared<CKMS>(CKMS())),
-    cur_window_(std::make_shared<CKMS>(CKMS())),
+    prev_window_(createCKMS()),
+    cur_window_(createCKMS()),
     cur_window_begin_(),
     window_size_(window_size) {
 }
@@ -162,9 +162,9 @@ void CKMSSample::Impl::Update(std::int64_t value, SystemClock::time_point timest
 Snapshot CKMSSample::Impl::MakeSnapshot(SystemClock::time_point timestamp, uint64_t divisor) {
     std::lock_guard<std::mutex> lock{mutex_};
     if (AdvanceWindows(timestamp)) {
-        return {*prev_window_, divisor};
+        return {prev_window_, divisor};
     } else {
-        return {CKMS()};
+        return {createCKMS()};
     }
 }
 

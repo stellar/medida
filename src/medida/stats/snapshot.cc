@@ -52,7 +52,7 @@ class Snapshot::VectorImpl : public Snapshot::Impl {
 
 class Snapshot::CKMSImpl : public Snapshot::Impl {
  public:
-  CKMSImpl(const CKMS& ckms, uint64_t divisor = 1);
+  CKMSImpl(std::shared_ptr<CKMS> ckms, uint64_t divisor = 1);
   ~CKMSImpl();
   std::size_t size() const override;
   double getValue(double quantile) const override;
@@ -68,8 +68,8 @@ Snapshot::Snapshot(const std::vector<double>& values, uint64_t divisor)
   : impl_ {new Snapshot::VectorImpl {values, divisor}} {
 }
 
-Snapshot::Snapshot(const CKMS& ckms, uint64_t divisor)
-  : impl_ {new Snapshot::CKMSImpl {ckms, divisor}} {
+Snapshot::Snapshot(std::shared_ptr<CKMS> ckms, uint64_t divisor)
+  : impl_ {new Snapshot::CKMSImpl {std::move(ckms), divisor}} {
 }
 
 Snapshot::Snapshot(Snapshot&& other)
@@ -241,8 +241,8 @@ double Snapshot::VectorImpl::getValue(double quantile) const
     return lower + (delta * (upper - lower));
 }
 
-Snapshot::CKMSImpl::CKMSImpl(const CKMS & ckms, uint64_t divisor)
-    : ckms_ (std::make_shared<CKMS>(ckms)),
+Snapshot::CKMSImpl::CKMSImpl(std::shared_ptr<CKMS> ckms, uint64_t divisor)
+    : ckms_ (std::move(ckms)),
       divisor_ (divisor) {
 }
 
