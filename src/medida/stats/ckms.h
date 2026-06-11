@@ -50,6 +50,7 @@ class CKMS {
 
  private:
   double allowableError(int rank);
+  double allowableError(int rank, std::size_t size) const;
   bool insertBatch();
   void compress();
 
