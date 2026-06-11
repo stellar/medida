@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <vector>
 
 #include "medida/metered_interface.h"
 #include "medida/metric_interface.h"
@@ -42,6 +43,9 @@ class Timer : public MetricInterface, MeteredInterface, SamplingInterface, Summa
   std::chrono::nanoseconds duration_unit() const;
   void Clear();
   void Update(std::chrono::nanoseconds duration);
+  // Record a batch of durations (expressed in nanoseconds) with a single
+  // lock acquisition; equivalent to calling Update on each duration.
+  void UpdateMany(const std::vector<std::int64_t>& durations_ns);
   TimerContext TimeScope();
   void Time(std::function<void()>);
  private:

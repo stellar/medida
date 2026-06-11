@@ -25,6 +25,7 @@ class CKMSSample::Impl {
   std::uint64_t size(SystemClock::time_point timestamp);
   void Update(std::int64_t value);
   void Update(std::int64_t value, SystemClock::time_point timestamp);
+  void UpdateMany(const std::vector<std::int64_t>& values, SystemClock::time_point timestamp);
   Snapshot MakeSnapshot(uint64_t divisor = 1);
   Snapshot MakeSnapshot(SystemClock::time_point timestamp, uint64_t divisor = 1);
  private:
@@ -64,6 +65,14 @@ void CKMSSample::Update(std::int64_t value) {
 
 void CKMSSample::Update(std::int64_t value, SystemClock::time_point timestamp) {
   impl_->Update(value, timestamp);
+}
+
+void CKMSSample::UpdateMany(const std::vector<std::int64_t>& values) {
+  impl_->UpdateMany(values, SystemClock::now());
+}
+
+void CKMSSample::UpdateMany(const std::vector<std::int64_t>& values, SystemClock::time_point timestamp) {
+  impl_->UpdateMany(values, timestamp);
 }
 
 Snapshot CKMSSample::MakeSnapshot(uint64_t divisor) const {
@@ -156,6 +165,15 @@ void CKMSSample::Impl::Update(std::int64_t value, SystemClock::time_point timest
     std::lock_guard<std::mutex> lock{mutex_};
     if (AdvanceWindows(timestamp)) {
         cur_window_->insert(value);
+    }
+}
+
+void CKMSSample::Impl::UpdateMany(const std::vector<std::int64_t>& values, SystemClock::time_point timestamp) {
+    std::lock_guard<std::mutex> lock{mutex_};
+    if (AdvanceWindows(timestamp)) {
+        for (auto value : values) {
+            cur_window_->insert(value);
+        }
     }
 }
 
