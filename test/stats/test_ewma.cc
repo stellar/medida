@@ -4,6 +4,12 @@
 
 #include "medida/stats/ewma.h"
 
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <thread>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 using namespace medida::stats;
@@ -137,4 +143,56 @@ TEST(EWMATest, rateDefaultDurationIsOneSecond) {
   EXPECT_NEAR(0.6, ewma.getRate(), 1e-6);
   EXPECT_NEAR(36.0, ewma.getRate(std::chrono::minutes(1)), 1e-6);
   EXPECT_NEAR(2160.0, ewma.getRate(std::chrono::hours(1)), 1e-6);
+}
+
+
+TEST(EWMATest, concurrentOperationsStayFinite) {
+  auto ewma = EWMA::oneMinuteEWMA();
+  std::atomic<bool> valid {true};
+  std::vector<std::thread> threads;
+
+  for (auto i = 0; i < 4; i++) {
+    threads.emplace_back([&]() {
+      for (auto j = 0; j < 10000; j++) {
+        ewma.update(1);
+        if (j % 500 == 0) {
+          std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+      }
+    });
+  }
+
+  threads.emplace_back([&]() {
+    for (auto i = 0; i < 1000; i++) {
+      ewma.tick();
+      if (i % 50 == 0) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+      }
+    }
+  });
+
+  threads.emplace_back([&]() {
+    for (auto i = 0; i < 1000; i++) {
+      auto rate = ewma.getRate();
+      if (!std::isfinite(rate) || rate < 0.0) {
+        valid.store(false);
+      }
+      if (i % 50 == 0) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+      }
+    }
+  });
+
+  threads.emplace_back([&]() {
+    for (auto i = 0; i < 100; i++) {
+      ewma.clear();
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+  });
+
+  for (auto& thread : threads) {
+    thread.join();
+  }
+
+  EXPECT_TRUE(valid.load());
 }
