@@ -152,22 +152,22 @@ std::uint64_t Meter::Impl::count() const {
 
 
 double Meter::Impl::fifteen_minute_rate() {
-  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
+  std::lock_guard<std::mutex> lock {mutex_};
   return m15_rate_.getRate();
 }
 
 
 double Meter::Impl::five_minute_rate() {
-  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
+  std::lock_guard<std::mutex> lock {mutex_};
   return m5_rate_.getRate();
 }
 
 
 double Meter::Impl::one_minute_rate() {
-  std::lock_guard<std::mutex> lock {mutex_};
   TickIfNecessary();
+  std::lock_guard<std::mutex> lock {mutex_};
   return m1_rate_.getRate();
 }
 
@@ -184,7 +184,9 @@ double Meter::Impl::mean_rate() {
 
 
 void Meter::Impl::Mark(std::uint64_t n) {
-  std::lock_guard<std::mutex> lock {mutex_};
+  // Lock-free fast path: count_ is atomic and EWMA::update is an atomic
+  // add of the uncounted event count; only the (rare, once per 5s) tick
+  // needs exclusion, which TickIfNecessary provides internally.
   TickIfNecessary();
   count_ += n;
   m1_rate_.update(n);
@@ -211,15 +213,21 @@ void Meter::Impl::Tick() {
 
 
 void Meter::Impl::TickIfNecessary() {
-  // Only used internally, callers must ensure proper synchronization
+  // Safe to call without holding mutex_: a CAS on last_tick_ elects a single
+  // ticking thread per interval, and the winner performs the EWMA ticks under
+  // mutex_ (which excludes concurrent rate readers and Clear()). Concurrent
+  // Mark() calls proceed lock-free; their updates land on either side of the
+  // tick, same as with the previous fully-locked scheme.
   auto old_tick = last_tick_.load();
   auto new_tick = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now().time_since_epoch()).count();
   auto age = new_tick - old_tick;
   if (age > kTickInterval) {
-    last_tick_ = new_tick;
-    auto required_ticks = age / kTickInterval;
-    for (auto i = 0; i < required_ticks; i ++) {
-      Tick();
+    if (last_tick_.compare_exchange_strong(old_tick, new_tick)) {
+      auto required_ticks = age / kTickInterval;
+      std::lock_guard<std::mutex> lock {mutex_};
+      for (auto i = 0; i < required_ticks; i ++) {
+        Tick();
+      }
     }
   }
 }
