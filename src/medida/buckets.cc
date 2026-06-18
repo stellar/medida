@@ -4,7 +4,7 @@
 
 #include "medida/buckets.h"
 #include "medida/timer.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 #include <map>
 #include <memory>
 #include <mutex>

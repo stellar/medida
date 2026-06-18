@@ -3,7 +3,7 @@
 //
 
 #include "medida/meter.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 
 #include <atomic>
 #include <mutex>

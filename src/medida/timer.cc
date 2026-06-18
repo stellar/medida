@@ -3,7 +3,7 @@
 //
 
 #include "medida/timer.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 
 #include "medida/histogram.h"
 #include "medida/meter.h"

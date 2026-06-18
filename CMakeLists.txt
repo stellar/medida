@@ -9,6 +9,7 @@ set (medida_VERSION_MINOR 1)
 set (medida_VERSION_PATCH 0)
 set (medida_VERSION_TAG "")
 set (medida_VERSION "${medida_VERSION_MAJOR}.${medida_VERSION_MINOR}.${medida_VERSION_PATCH}${medida_VERSION_TAG}")
+option(MEDIDA_WITH_COLLECTD_REPORTER "Build the collectd reporter" ON)
 
 
 ## Configuration
@@ -17,7 +18,15 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-diagnostics-show-option -std=c++0x -Wall -Wextra -pedantic -Wno-long-long -Wno-deprecated -fno-strict-aliasing")
+if(MSVC)
+  add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-diagnostics-show-option -Wall -Wextra -pedantic -Wno-long-long -Wno-deprecated -fno-strict-aliasing")
+endif()
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   include(FindPkgConfig)
@@ -43,12 +52,17 @@ set(medida_SOURCES
   src/medida/timer.cc
   src/medida/timer_context.cc
   src/medida/reporting/abstract_polling_reporter.cc
-  src/medida/reporting/collectd_reporter.cc
   src/medida/reporting/console_reporter.cc
   src/medida/reporting/json_reporter.cc
   src/medida/reporting/util.cc
   src/medida/histogram.cc
 )
+
+if(MEDIDA_WITH_COLLECTD_REPORTER AND NOT WIN32)
+  list(APPEND medida_SOURCES
+    src/medida/reporting/collectd_reporter.cc
+  )
+endif()
 
 set(medida_HEADERS
   src/medida/buckets.h
@@ -89,7 +103,13 @@ include_directories(
   ${medida_BINARY_DIR}
 )
 
-add_library(medida SHARED
+if(WIN32)
+  set(MEDIDA_LIBRARY_TYPE STATIC)
+else()
+  set(MEDIDA_LIBRARY_TYPE SHARED)
+endif()
+
+add_library(medida ${MEDIDA_LIBRARY_TYPE}
   ${medida_SOURCES}
   ${medida_PROTO_SRCS}
 )
@@ -97,6 +117,10 @@ add_library(medida SHARED
 target_link_libraries(medida
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+if(WIN32)
+  target_link_libraries(medida ws2_32)
+endif()
 
 set_target_properties(medida PROPERTIES
   OUTPUT_NAME medida
@@ -106,6 +130,7 @@ set_target_properties(medida PROPERTIES
 
 install(TARGETS medida
   LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
 )
 
 install(FILES

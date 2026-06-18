@@ -44,7 +44,7 @@ TEST(CKMSSampleTest, aThreeDifferentValues) {
 TEST(CKMSSampleTest, aCKMSSnapshotTestCurrentWindow) {
   CKMSSample sample;
 
-  auto t = medida::Clock::time_point();
+  auto t = medida::SystemClock::time_point();
 
   // [0 seconds, 30 seconds) contains {1, 1, ..., 1}. (30 of them)
   // [30 seconds, 60 seconds) contains {2, 2, ..., 2}. (15 of them)
@@ -67,7 +67,7 @@ TEST(CKMSSampleTest, aCKMSSnapshotTestCurrentWindow) {
 TEST(CKMSSampleTest, aCKMSSnapshotTestNextWindow) {
   CKMSSample sample;
 
-  auto t = medida::Clock::time_point();
+  auto t = medida::SystemClock::time_point();
 
   // [0 seconds, 30 seconds) contains {1, 1, ..., 1}. (30 of them)
   for (auto i = 0; i < 30; i++) {
@@ -87,7 +87,7 @@ TEST(CKMSSampleTest, aCKMSSnapshotTestNextWindow) {
 TEST(CKMSSampleTest, aCKMSSnapshotTestFuture) {
   CKMSSample sample;
 
-  auto t = medida::Clock::time_point();
+  auto t = medida::SystemClock::time_point();
 
   // [0 seconds, 30 seconds) contains {1, 1, ..., 1}. (30 of them)
   for (auto i = 0; i < 30; i++) {
@@ -107,7 +107,7 @@ TEST(CKMSSampleTest, aCKMSSnapshotTestFuture) {
 TEST(CKMSSampleTest, aCKMSUpdateWithHugeGap) {
   CKMSSample sample;
 
-  auto t = medida::Clock::time_point();
+  auto t = medida::SystemClock::time_point();
 
   for (auto i = 0; i < 10; i++) {
     sample.Update(1, t);
@@ -129,7 +129,7 @@ TEST(CKMSSampleTest, aCKMSUpdateWithHugeGap) {
 TEST(CKMSSampleTest, aSpikyInputs) {
   CKMSSample sample;
 
-  auto t = medida::Clock::now();
+  auto t = medida::SystemClock::now();
 
   auto const size = 100000;
   for (auto i = 0; i < 5; i++) {

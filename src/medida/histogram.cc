@@ -3,7 +3,7 @@
 //
 
 #include "medida/histogram.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 
 #include <cmath>
 #include <mutex>
