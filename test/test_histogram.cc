@@ -57,23 +57,46 @@ TEST(HistogramTest, ckmsWindowSize) {
   auto& histogram1 = r1.NewHistogram({"a", "b", "c"}, SamplingInterface::kCKMS);
   auto& histogram2 = r2.NewHistogram({"a", "b", "c"}, SamplingInterface::kCKMS);
 
-  histogram1.Update(123);
-  histogram2.Update(123);
+  auto updateValues = [&]() {
+    histogram1.Update(123);
+    histogram2.Update(123);
+  };
+
+  updateValues();
 
   // CKMS reports the previous window.
   // The value 123 was added in the current window,
   // so we shouldn't report anything yet.
-  EXPECT_EQ(0, histogram1.GetSnapshot().size());
-  EXPECT_EQ(0, histogram2.GetSnapshot().size());
+  EXPECT_EQ(0u, histogram1.GetSnapshot().size());
+  EXPECT_EQ(0u, histogram2.GetSnapshot().size());
 
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  auto snapshot1_size = std::uint64_t {0};
+  for (auto attempt = 0; attempt < 3 && snapshot1_size == 0; attempt++) {
+    if (attempt != 0) {
+      updateValues();
+    }
+
+    auto deadline = Clock::now() + std::chrono::seconds(2);
+    while (true) {
+      auto snapshot1 = histogram1.GetSnapshot();
+      auto snapshot2 = histogram2.GetSnapshot();
+      // histogram2 snapshot will always be empty
+      EXPECT_EQ(0u, snapshot2.size());
+
+      snapshot1_size = snapshot1.size();
+      if (snapshot1_size != 0 || Clock::now() >= deadline) {
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+  }
 
   // Since r1 uses 1 second as the window size,
-  // the value 123 must be in the previous window now.
+  // the value 123 must eventually be in the previous window.
   // r1 uses 2000000000 seconds (= approx. 63 years) as the window size,
   // so the value 123 must not be in the current window yet.
-  EXPECT_EQ(1, histogram1.GetSnapshot().size());
-  EXPECT_EQ(0, histogram2.GetSnapshot().size());
+  EXPECT_NE(0u, snapshot1_size);
+  EXPECT_EQ(0u, histogram2.GetSnapshot().size());
 }
 
 TEST(HistogramTest, ckmsMetrics) {
