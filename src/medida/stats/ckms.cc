@@ -250,20 +250,19 @@ void CKMS::compress() {
   // considered as `prev` for the following pair, and the error allowance is
   // computed from next's position in (and size of) the evolving vector.
   std::size_t const n = sample_.size();
-  std::vector<Item> out;
-  out.reserve(n);
+  std::size_t write = 0;
 
   Item prev = sample_[0];
   bool havePrev = true;
   std::size_t i = 1;
   while (i < n) {
-    Item const& next = sample_[i];
-    std::size_t evolvingSize = out.size() + 1 + (n - i);
+    Item next = sample_[i];
+    std::size_t evolvingSize = write + 1 + (n - i);
     if (prev.g + next.g + next.delta <=
-        allowableError(static_cast<int>(out.size() + 1), evolvingSize)) {
+        allowableError(static_cast<int>(write + 1), evolvingSize)) {
       Item folded = next;
       folded.g += prev.g;
-      out.push_back(folded);
+      sample_[write++] = folded;
       ++i;
       if (i < n) {
         prev = sample_[i];
@@ -272,15 +271,15 @@ void CKMS::compress() {
         havePrev = false;
       }
     } else {
-      out.push_back(prev);
+      sample_[write++] = prev;
       prev = next;
       ++i;
     }
   }
   if (havePrev) {
-    out.push_back(prev);
+    sample_[write++] = prev;
   }
-  sample_.swap(out);
+  sample_.erase(sample_.begin() + write, sample_.end());
 }
 
 } // namespace stats
