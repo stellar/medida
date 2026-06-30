@@ -29,8 +29,8 @@ class EWMA::Impl {
   double getRate(std::chrono::nanoseconds duration = std::chrono::seconds {1}) const;
   void clear();
  private:
-  volatile bool initialized_;
-  volatile double rate_;
+  std::atomic<bool> initialized_;
+  std::atomic<double> rate_;
   std::atomic<std::int64_t> uncounted_;
   const double alpha_;
   const std::int64_t interval_nanos_;
@@ -98,9 +98,9 @@ EWMA::Impl::Impl(double alpha, std::chrono::nanoseconds interval)
 
 
 EWMA::Impl::Impl(Impl &other)
-    : initialized_    {other.initialized_},
-      rate_           {other.rate_},
-      uncounted_      {other.uncounted_.load()},
+    : initialized_    {other.initialized_.load(std::memory_order_relaxed)},
+      rate_           {other.rate_.load(std::memory_order_relaxed)},
+      uncounted_      {other.uncounted_.load(std::memory_order_relaxed)},
       alpha_          {other.alpha_},
       interval_nanos_ {other.interval_nanos_} {
 }
@@ -111,31 +111,32 @@ EWMA::Impl::~Impl() {
 
 
 void EWMA::Impl::update(std::int64_t n) {
-  uncounted_ += n;
+  uncounted_.fetch_add(n, std::memory_order_relaxed);
 }
 
 
 void EWMA::Impl::tick() {
-  double count = uncounted_.exchange(0);
+  double count = uncounted_.exchange(0, std::memory_order_relaxed);
   auto instantRate = count / interval_nanos_;
-  if (initialized_) {
-    rate_ += (alpha_ * (instantRate - rate_));
+  if (initialized_.load(std::memory_order_relaxed)) {
+    auto rate = rate_.load(std::memory_order_relaxed);
+    rate_.store(rate + (alpha_ * (instantRate - rate)), std::memory_order_relaxed);
   } else {
-    rate_ = instantRate;
-    initialized_ = true;
+    rate_.store(instantRate, std::memory_order_relaxed);
+    initialized_.store(true, std::memory_order_relaxed);
   }
 }
 
 
 double EWMA::Impl::getRate(std::chrono::nanoseconds duration) const {
-  return rate_ * duration.count();
+  return rate_.load(std::memory_order_relaxed) * duration.count();
 }
 
 void EWMA::Impl::clear()
 {
-  initialized_ = false;
-  rate_ = 0.0;
-  uncounted_ = 0;
+  initialized_.store(false, std::memory_order_relaxed);
+  rate_.store(0.0, std::memory_order_relaxed);
+  uncounted_.store(0, std::memory_order_relaxed);
 }
 
 } // namespace stats

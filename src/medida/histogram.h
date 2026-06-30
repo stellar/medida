@@ -36,6 +36,9 @@ class Histogram : public MetricInterface, SamplingInterface, SummarizableInterfa
   virtual double mean() const override;
   virtual double std_dev() const override;
   void Update(std::int64_t value);
+  // Record a batch of values with a single lock acquisition (and a single
+  // sample-window timestamp); equivalent to calling Update on each value.
+  void UpdateMany(const std::vector<std::int64_t>& values);
   std::uint64_t count() const;
   double variance() const;
   void Process(MetricProcessor& processor) override;

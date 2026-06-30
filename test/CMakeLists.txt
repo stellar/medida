@@ -1,6 +1,8 @@
 # Build gtest from source
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory (gtest-1.6.0)
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+include_directories(${medida_SOURCE_DIR}/src)
 
 set(test_sources
   test_counter.cc
@@ -9,7 +11,6 @@ set(test_sources
   test_metric_name.cc
   test_metrics_registry.cc
   test_timer.cc
-  reporting/test_collectd_reporter.cc
   reporting/test_console_reporter.cc
   reporting/test_json_reporter.cc
   stats/test_ckms.cc
@@ -19,6 +20,12 @@ set(test_sources
   stats/test_snapshot.cc
   stats/test_uniform_sample.cc
 )
+
+if(MEDIDA_WITH_COLLECTD_REPORTER AND NOT WIN32)
+  list(APPEND test_sources
+    reporting/test_collectd_reporter.cc
+  )
+endif()
 
 add_executable(test-medida ${test_sources})
 

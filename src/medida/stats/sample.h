@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "medida/stats/snapshot.h"
 
@@ -19,6 +20,13 @@ public:
   virtual void Clear() = 0;
   virtual std::uint64_t size() const = 0;
   virtual void Update(std::int64_t value) = 0;
+  // Bulk update; implementations may amortize per-update overhead (locking,
+  // clock reads) over the whole batch.
+  virtual void UpdateMany(const std::vector<std::int64_t>& values) {
+    for (auto value : values) {
+      Update(value);
+    }
+  }
   virtual Snapshot MakeSnapshot(uint64_t divisor = 1) const = 0;
 };
 

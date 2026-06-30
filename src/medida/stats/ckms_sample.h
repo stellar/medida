@@ -50,6 +50,8 @@ class CKMSSample : public Sample {
   virtual std::uint64_t size(SystemClock::time_point timestamp) const;
   virtual void Update(std::int64_t value);
   virtual void Update(std::int64_t value, SystemClock::time_point timestamp);
+  virtual void UpdateMany(const std::vector<std::int64_t>& values) override;
+  virtual void UpdateMany(const std::vector<std::int64_t>& values, SystemClock::time_point timestamp);
   virtual Snapshot MakeSnapshot(uint64_t divisor = 1) const;
   virtual Snapshot MakeSnapshot(SystemClock::time_point timestamp, uint64_t divisor = 1) const;
  private:

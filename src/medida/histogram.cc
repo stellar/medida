@@ -3,7 +3,7 @@
 //
 
 #include "medida/histogram.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 
 #include <cmath>
 #include <mutex>
@@ -34,6 +34,7 @@ class Histogram::Impl {
   double mean() const;
   double std_dev() const;
   void Update(std::int64_t value);
+  void UpdateMany(const std::vector<std::int64_t>& values);
   std::uint64_t count() const;
   double variance() const;
   void Process(MetricProcessor& processor);
@@ -47,7 +48,9 @@ class Histogram::Impl {
   std::uint64_t count_;
   double variance_m_;
   double variance_s_;
-  mutable std::recursive_mutex mutex_;
+  mutable std::mutex mutex_;
+  double variance_unlocked() const;
+  void update_stats_unlocked(std::int64_t value);
 };
 
 
@@ -116,6 +119,11 @@ void Histogram::Update(std::int64_t value) {
     impl_->Update(value);
 }
 
+void Histogram::UpdateMany(const std::vector<std::int64_t>& values) {
+    ZoneScoped;
+    impl_->UpdateMany(values);
+}
+
 stats::Snapshot Histogram::GetSnapshot() const {
     ZoneScoped;
     // We pass 1 here as dividing metrics by 1 changes nothing!
@@ -158,7 +166,7 @@ Histogram::Impl::~Impl() {
 
 
 void Histogram::Impl::Clear() {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   min_ = 0;
   max_ = 0;
   sum_ = 0;
@@ -170,19 +178,19 @@ void Histogram::Impl::Clear() {
 
 
 std::uint64_t Histogram::Impl::count() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   return count_;
 }
 
 
 double Histogram::Impl::sum() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   return sum_;
 }
 
 
 double Histogram::Impl::max() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   if (count_ > 0) {
     return max_;
   }
@@ -191,7 +199,7 @@ double Histogram::Impl::max() const {
 
 
 double Histogram::Impl::min() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   if (count_ > 0) {
     return min_;
   }
@@ -200,7 +208,7 @@ double Histogram::Impl::min() const {
 
 
 double Histogram::Impl::mean() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   if (count_ > 0) {
     return sum_ / (double)count_;
   }
@@ -209,8 +217,8 @@ double Histogram::Impl::mean() const {
 
 
 double Histogram::Impl::std_dev() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
-  double var = variance();
+  std::lock_guard<std::mutex> lock {mutex_};
+  double var = variance_unlocked();
   if (count_ > 0) {
     return std::sqrt(var);
   }
@@ -219,24 +227,45 @@ double Histogram::Impl::std_dev() const {
 
 
 double Histogram::Impl::variance() const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
-  auto c = count();
-  if (c > 1) {
-    return variance_s_ / (c - 1.0);
+  std::lock_guard<std::mutex> lock {mutex_};
+  return variance_unlocked();
+}
+
+
+double Histogram::Impl::variance_unlocked() const {
+  if (count_ > 1) {
+    return variance_s_ / (count_ - 1.0);
   }
   return 0.0;
 }
 
 
 stats::Snapshot Histogram::Impl::GetSnapshot(uint64_t divisor) const {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   return sample_->MakeSnapshot(divisor);
 }
 
 
 void Histogram::Impl::Update(std::int64_t value) {
-  std::lock_guard<std::recursive_mutex> lock {mutex_};
+  std::lock_guard<std::mutex> lock {mutex_};
   sample_->Update(value);
+  update_stats_unlocked(value);
+}
+
+
+void Histogram::Impl::UpdateMany(const std::vector<std::int64_t>& values) {
+  if (values.empty()) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock {mutex_};
+  sample_->UpdateMany(values);
+  for (auto value : values) {
+    update_stats_unlocked(value);
+  }
+}
+
+
+void Histogram::Impl::update_stats_unlocked(std::int64_t value) {
   double dval = (double)value;
   if (count_ > 0) {
     max_ = std::max(max_, dval);

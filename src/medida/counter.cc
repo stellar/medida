@@ -3,7 +3,7 @@
 //
 
 #include "medida/counter.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 
 #include <atomic>
 

@@ -3,7 +3,7 @@
 //
 
 #include "medida/timer.h"
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 
 #include "medida/histogram.h"
 #include "medida/meter.h"
@@ -35,6 +35,7 @@ class Timer::Impl {
   std::chrono::nanoseconds duration_unit() const;
   void Clear();
   void Update(std::chrono::nanoseconds duration);
+  void UpdateMany(const std::vector<std::int64_t>& durations_ns);
   TimerContext TimeScope();
   void Time(std::function<void()>);
  private:
@@ -157,6 +158,12 @@ void Timer::Update(std::chrono::nanoseconds duration) {
 }
 
 
+void Timer::UpdateMany(const std::vector<std::int64_t>& durations_ns) {
+    ZoneScoped;
+    impl_->UpdateMany(durations_ns);
+}
+
+
 stats::Snapshot Timer::GetSnapshot() const {
     ZoneScoped;
     return impl_->GetSnapshot();
@@ -275,6 +282,28 @@ void Timer::Impl::Update(std::chrono::nanoseconds duration) {
   if (count >= 0) {
     histogram_.Update(count);
     meter_.Mark();
+  }
+}
+
+
+void Timer::Impl::UpdateMany(const std::vector<std::int64_t>& durations_ns) {
+  bool allNonNegative = true;
+  for (auto d : durations_ns) {
+    if (d < 0) {
+      allNonNegative = false;
+      break;
+    }
+  }
+  if (allNonNegative) {
+    if (!durations_ns.empty()) {
+      histogram_.UpdateMany(durations_ns);
+      meter_.Mark(durations_ns.size());
+    }
+  } else {
+    // Rare: fall back to filtering out negative durations one by one.
+    for (auto d : durations_ns) {
+      Update(std::chrono::nanoseconds(d));
+    }
   }
 }
 

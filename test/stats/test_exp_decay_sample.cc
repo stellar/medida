@@ -103,8 +103,13 @@ TEST(ExpDecaySampleTest, longPeriodsOfInactivityShouldNotCorruptSamplingState) {
   }
   EXPECT_EQ(10, sample.size());
 
-  for (auto& v : sample.MakeSnapshot().getValues()) {
+  int newSamples = 0;
+  auto snapshot = sample.MakeSnapshot();
+  for (auto& v : snapshot.getValues()) {
     EXPECT_LE(v, 4000.0);
-    EXPECT_GE(v, 3000.0);
+    newSamples += v >= 3000.0;
   }
+  // Sometimes the 2000 value is still in the snapshot due to the randomness 
+  // of the sampling.
+  EXPECT_GE(newSamples, snapshot.getValues().size() - 1);
 }

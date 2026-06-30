@@ -137,7 +137,10 @@ void CKMS::reset() {
 }
 
 double CKMS::allowableError(int rank) {
-  auto size = sample_.size();
+  return allowableError(rank, sample_.size());
+}
+
+double CKMS::allowableError(int rank, std::size_t size) const {
   double minError = size + 1;
 
   for (const auto& q : quantiles_.get()) {
@@ -169,30 +172,67 @@ bool CKMS::insertBatch() {
     ++count_;
   }
 
-  std::size_t idx = 0;
-  std::size_t item = idx++;
+  // Single-pass merge of the sorted buffer into the sorted sample. This is
+  // semantically identical to the historical version (which emplaced each
+  // value mid-vector, costing O(buffer * sample) element moves per batch and
+  // causing latency spikes on hot histograms), including its quirks:
+  //  - a value equal to an existing element is inserted right after the
+  //    first such element encountered by the forward scan;
+  //  - delta is computed from the insertion *position* in the evolving
+  //    vector and the evolving (pre-insertion) size, with delta = 0 only for
+  //    position 1 and the second-to-last position (position 0 falls through
+  //    to the general formula due to size_t underflow in `idx - 1 == 0`).
+  //
+  // Scan state: `cur` is the element the scan pointer rests on (either an
+  // original sample element or the most recently inserted value); elements
+  // before it are in `merged`; elements after it are sample_[s..n-1].
+  std::size_t const n = sample_.size();
+  std::vector<Item> merged;
+  merged.reserve(n + buffer_count_ - start);
+
+  Item cur = sample_[0];
+  std::size_t s = 1;
 
   for (std::size_t i = start; i < buffer_count_; ++i) {
     double v = buffer_[i];
-    while (idx < sample_.size() && sample_[item].value < v) {
-      item = idx++;
+    while (cur.value < v && s < n) {
+      merged.push_back(cur);
+      cur = sample_[s++];
     }
 
-    if (sample_[item].value > v) {
-      --idx;
+    // Pre-insertion size of the evolving vector: merged + cur + suffix.
+    std::size_t evolvingSize = merged.size() + 1 + (n - s);
+    std::size_t idx;
+    if (cur.value > v) {
+      // Insert before cur: cur (always an original sample element here,
+      // since previously inserted values are <= v) returns to the head of
+      // the unconsumed suffix.
+      idx = merged.size();
+      --s;
+    } else {
+      // cur.value <= v: insert right after cur. This covers both the
+      // equal-value case and the append-at-end case where the scan
+      // consumed the whole suffix.
+      merged.push_back(cur);
+      idx = merged.size();
     }
 
     int delta;
-    if (idx - 1 == 0 || idx + 1 == sample_.size()) {
+    if (idx - 1 == 0 || idx + 1 == evolvingSize) {
       delta = 0;
     } else {
-      delta = static_cast<int>(std::floor(allowableError(idx + 1))) + 1;
+      delta = static_cast<int>(std::floor(
+                  allowableError(static_cast<int>(idx + 1), evolvingSize))) +
+              1;
     }
 
-    sample_.emplace(sample_.begin() + idx, v, 1, delta);
+    cur = Item(v, 1, delta);
     count_++;
-    item = idx++;
   }
+
+  merged.push_back(cur);
+  merged.insert(merged.end(), sample_.begin() + s, sample_.end());
+  sample_.swap(merged);
 
   buffer_count_ = 0;
   return true;
@@ -203,20 +243,43 @@ void CKMS::compress() {
     return;
   }
 
-  std::size_t idx = 0;
-  std::size_t prev;
-  std::size_t next = idx++;
+  // Walk adjacent (prev, next) pairs, folding prev into next when the
+  // combined error stays within bounds. Semantically identical to the
+  // historical version (which did an O(n) vector::erase per fold),
+  // including its index bookkeeping quirks: a freshly folded item is not
+  // considered as `prev` for the following pair, and the error allowance is
+  // computed from next's position in (and size of) the evolving vector.
+  std::size_t const n = sample_.size();
+  std::size_t write = 0;
 
-  while (idx < sample_.size()) {
-    prev = next;
-    next = idx++;
-
-    if (sample_[prev].g + sample_[next].g + sample_[next].delta <=
-        allowableError(idx - 1)) {
-      sample_[next].g += sample_[prev].g;
-      sample_.erase(sample_.begin() + prev);
+  Item prev = sample_[0];
+  bool havePrev = true;
+  std::size_t i = 1;
+  while (i < n) {
+    Item next = sample_[i];
+    std::size_t evolvingSize = write + 1 + (n - i);
+    if (prev.g + next.g + next.delta <=
+        allowableError(static_cast<int>(write + 1), evolvingSize)) {
+      Item folded = next;
+      folded.g += prev.g;
+      sample_[write++] = folded;
+      ++i;
+      if (i < n) {
+        prev = sample_[i];
+        ++i;
+      } else {
+        havePrev = false;
+      }
+    } else {
+      sample_[write++] = prev;
+      prev = next;
+      ++i;
     }
   }
+  if (havePrev) {
+    sample_[write++] = prev;
+  }
+  sample_.erase(sample_.begin() + write, sample_.end());
 }
 
 } // namespace stats

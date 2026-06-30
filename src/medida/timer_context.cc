@@ -2,7 +2,7 @@
 // Copyright (c) 2012 Daniel Lundin
 //
 
-#include <Tracy.hpp>
+#include "medida/tracy.h"
 #include <stdexcept>
 
 #include "medida/timer_context.h"
