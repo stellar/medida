@@ -25,7 +25,7 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-diagnostics-show-option -Wall -Wextra -pedantic -Wno-long-long -Wno-deprecated -fno-strict-aliasing")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -43,6 +43,7 @@ set(medida_SOURCES
   src/medida/stats/sliding_window_sample.cc
   src/medida/stats/ckms.cc
   src/medida/stats/ckms_sample.cc
+  src/medida/stats/log_histogram_sample.cc
   src/medida/buckets.cc
   src/medida/counter.cc
   src/medida/meter.cc
@@ -92,6 +93,7 @@ set(medida_HEADERS
   src/medida/stats/uniform_sample.h
   src/medida/stats/ckms.h
   src/medida/stats/ckms_sample.h
+  src/medida/stats/log_histogram_sample.h
 )
 
 ## Dependencies
@@ -166,6 +168,7 @@ install(FILES
   src/medida/stats/sliding_window_sample.h
   src/medida/stats/ckms.h
   src/medida/stats/ckms_sample.h
+  src/medida/stats/log_histogram_sample.h
   src/medida/stats/sample.h
   src/medida/stats/snapshot.h
   src/medida/stats/uniform_sample.h

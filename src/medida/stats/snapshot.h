@@ -7,6 +7,8 @@
 
 #include "medida/stats/ckms.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -17,6 +19,10 @@ class Snapshot {
  public:
   Snapshot(const std::vector<double>& values, uint64_t divisor = 1);
   Snapshot(const CKMS& ckms, uint64_t divisor = 1);
+  Snapshot(const std::vector<std::uint64_t>& log_histogram_counts,
+           std::size_t buckets_per_level,
+           std::int64_t max,
+           uint64_t divisor = 1);
   ~Snapshot();
   Snapshot(Snapshot const&) = delete;
   Snapshot& operator=(Snapshot const&) = delete;
@@ -34,6 +40,7 @@ class Snapshot {
   class Impl;
   class VectorImpl;
   class CKMSImpl;
+  class LogHistogramImpl;
  private:
   void checkImpl() const;
   std::unique_ptr<Impl> impl_;
