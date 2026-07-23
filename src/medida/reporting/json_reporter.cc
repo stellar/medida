@@ -102,7 +102,7 @@ JsonReporter::Impl::setName()
 	}
 #else
   utsname name;
-  uname_ = {uname(&name) ? "localhost" : name.nodename};
+  uname_ = uname(&name) ? "localhost" : name.nodename;
 #endif
 }
 
