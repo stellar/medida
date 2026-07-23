@@ -14,6 +14,7 @@
 #include "medida/stats/uniform_sample.h"
 #include "medida/stats/sliding_window_sample.h"
 #include "medida/stats/ckms_sample.h"
+#include "medida/stats/log_histogram_sample.h"
 
 namespace medida {
 
@@ -154,6 +155,8 @@ Histogram::Impl::Impl(SampleType sample_type, std::chrono::seconds ckms_window_s
                                                                             kDefaultWindowTime));
   } else if (sample_type == kCKMS) {
     sample_ = std::unique_ptr<stats::Sample>(new stats::CKMSSample(ckms_window_size));
+  } else if (sample_type == kLogHistogram) {
+    sample_ = std::unique_ptr<stats::Sample>(new stats::LogHistogramSample(ckms_window_size));
   } else {
       throw std::invalid_argument("invalid sample_type");
   }

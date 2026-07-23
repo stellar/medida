@@ -5,8 +5,10 @@
 #include "medida/stats/snapshot.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <cassert>
 
@@ -64,12 +66,47 @@ class Snapshot::CKMSImpl : public Snapshot::Impl {
 };
 
 
+class Snapshot::LogHistogramImpl : public Snapshot::Impl {
+ public:
+  LogHistogramImpl(const std::vector<std::uint64_t>& counts,
+                   std::size_t buckets_per_level,
+                   std::int64_t max,
+                   uint64_t divisor = 1);
+  ~LogHistogramImpl();
+  std::size_t size() const override;
+  double getValue(double quantile) const override;
+  double max() const override;
+  std::vector<double> getValues() const override;
+ private:
+  double BucketValue(std::size_t bucket) const;
+  double MagnitudeBucketValue(std::size_t bucket) const;
+
+  std::vector<std::uint64_t> counts_;
+  std::size_t const buckets_per_level_;
+  std::size_t const sub_bucket_bits_;
+  std::size_t const magnitude_buckets_;
+  std::uint64_t size_;
+  std::int64_t const max_;
+  uint64_t const divisor_;
+};
+
+
 Snapshot::Snapshot(const std::vector<double>& values, uint64_t divisor)
   : impl_ {new Snapshot::VectorImpl {values, divisor}} {
 }
 
 Snapshot::Snapshot(const CKMS& ckms, uint64_t divisor)
   : impl_ {new Snapshot::CKMSImpl {ckms, divisor}} {
+}
+
+Snapshot::Snapshot(const std::vector<std::uint64_t>& log_histogram_counts,
+                   std::size_t buckets_per_level,
+                   std::int64_t max,
+                   uint64_t divisor)
+  : impl_ {new Snapshot::LogHistogramImpl {log_histogram_counts,
+                                           buckets_per_level,
+                                           max,
+                                           divisor}} {
 }
 
 Snapshot::Snapshot(Snapshot&& other)
@@ -266,6 +303,101 @@ double Snapshot::CKMSImpl::max() const {
 
 double Snapshot::CKMSImpl::getValue(double quantile) const {
     return ckms_->get(quantile) / (double) divisor_;
+}
+
+Snapshot::LogHistogramImpl::LogHistogramImpl(
+    const std::vector<std::uint64_t>& counts,
+    std::size_t buckets_per_level,
+    std::int64_t max,
+    uint64_t divisor)
+    : counts_(counts),
+      buckets_per_level_(buckets_per_level),
+      sub_bucket_bits_(buckets_per_level == 0 ? 0 :
+                       static_cast<std::size_t>(std::bit_width(buckets_per_level) - 1)),
+      magnitude_buckets_((counts.size() - 1) / 2),
+      size_(0),
+      max_(max),
+      divisor_(divisor) {
+  for (auto count : counts_) {
+    size_ += count;
+  }
+}
+
+Snapshot::LogHistogramImpl::~LogHistogramImpl() {
+}
+
+std::size_t Snapshot::LogHistogramImpl::size() const {
+  return size_;
+}
+
+double Snapshot::LogHistogramImpl::max() const {
+  if (size_ == 0) {
+    return 0.0;
+  }
+  return max_ / (double) divisor_;
+}
+
+std::vector<double> Snapshot::LogHistogramImpl::getValues() const {
+  throw std::runtime_error("Can't return the values since log histogram doesn't have them");
+}
+
+double Snapshot::LogHistogramImpl::MagnitudeBucketValue(std::size_t bucket) const {
+  std::size_t const level = bucket / buckets_per_level_;
+  std::size_t const offset = bucket % buckets_per_level_;
+
+  if (level >= 63) {
+    return std::ldexp(1.0, 63);
+  }
+
+  double const base = std::ldexp(1.0, static_cast<int>(level));
+  if (level >= sub_bucket_bits_) {
+    double const width = std::ldexp(1.0,
+                                   static_cast<int>(level - sub_bucket_bits_));
+    return base + (offset + 0.5) * width;
+  }
+
+  std::size_t const shift = sub_bucket_bits_ - level;
+  return base + static_cast<double>(offset >> shift);
+}
+
+double Snapshot::LogHistogramImpl::BucketValue(std::size_t bucket) const {
+  if (bucket < magnitude_buckets_) {
+    return -MagnitudeBucketValue(magnitude_buckets_ - 1 - bucket);
+  }
+  if (bucket == magnitude_buckets_) {
+    return 0.0;
+  }
+  return MagnitudeBucketValue(bucket - magnitude_buckets_ - 1);
+}
+
+double Snapshot::LogHistogramImpl::getValue(double quantile) const {
+  if (quantile < 0.0 || quantile > 1.0)
+  {
+      throw std::invalid_argument("quantile is not in [0..1]");
+  }
+
+  if (size_ == 0) {
+    return 0.0;
+  }
+
+  if (quantile == 1.0) {
+    return max();
+  }
+
+  std::uint64_t rank = static_cast<std::uint64_t>(std::ceil(quantile * size_));
+  if (rank == 0) {
+    rank = 1;
+  }
+
+  std::uint64_t cumulative = 0;
+  for (std::size_t i = 0; i < counts_.size(); ++i) {
+    cumulative += counts_[i];
+    if (cumulative >= rank) {
+      return BucketValue(i) / (double) divisor_;
+    }
+  }
+
+  return max();
 }
 
 double Snapshot::Impl::getMedian() const {

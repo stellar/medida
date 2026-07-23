@@ -120,6 +120,21 @@ TEST(HistogramTest, ckmsMetrics) {
   EXPECT_EQ(7, h.count());
 }
 
+TEST(HistogramTest, logHistogramMetrics) {
+  MetricsRegistry r {std::chrono::seconds(1)};
+  auto& h = r.NewHistogram({"a", "b", "c"}, SamplingInterface::kLogHistogram);
+
+  for (int i = 1; i <= 7; i++) {
+      h.Update(i);
+  }
+
+  EXPECT_EQ(1, h.min());
+  EXPECT_EQ(7, h.max());
+  EXPECT_NEAR(2.1602468994693, h.std_dev(), 1e-6);
+  EXPECT_EQ(28, h.sum());
+  EXPECT_EQ(7, h.count());
+}
+
 TEST(HistogramTest, updateManyIsSafeWithConcurrentReaders) {
   MetricsRegistry registry {};
   auto& histogram = registry.NewHistogram({"a", "b", "c"}, SamplingInterface::kUniform);
