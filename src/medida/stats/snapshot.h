@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <vector>
+#include <cstdint>
 
 namespace medida {
 namespace stats {
